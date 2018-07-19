@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, Button, TouchableHighlight, Modal } from 'react-native';
+import { View, TextInput, Button, ScrollView } from 'react-native';
 import SearchItemModalPicker from './SearchItemModalPicker';
 
 class SearchScreen extends React.Component {
@@ -12,6 +12,7 @@ class SearchScreen extends React.Component {
         db: null,
         records: [],
         spellName: '',
+        spellText: '',
         spellLevel: {
             type: 'spellLevel',
             selectable: [], // {id: int, name: string}
@@ -24,6 +25,11 @@ class SearchScreen extends React.Component {
         },
         schools: {
             type: 'schools',
+            selectable: [],
+            selected: []
+        },
+        descriptors: {
+            type: 'descriptors',
             selectable: [],
             selected: []
         }
@@ -58,7 +64,6 @@ class SearchScreen extends React.Component {
         this.state.db.transaction((tx) => {
             // Spell Classes
             let queryString = "SELECT * FROM dnd_characterclass WHERE id IN (SELECT DISTINCT character_class_id FROM dnd_spellclasslevel)";
-            var classes = [];
             tx.executeSql(queryString, [], (tx, results) => {
                 var len = results.rows.length;
                 for (let i = 0; i < len; i++) {
@@ -67,12 +72,22 @@ class SearchScreen extends React.Component {
             },
                 (error) => console.log(error)
             );
+            // Schools
             queryString = "SELECT * FROM dnd_spellschool WHERE id IN (SELECT DISTINCT school_id FROM dnd_spell)";
-            var schools = [];
             tx.executeSql(queryString, [], (tx, results) => {
                 var len = results.rows.length;
                 for (let i = 0; i < len; i++) {
                     this.state.schools.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
+                }
+            },
+                (error) => console.log(error)
+            );
+            // Descriptors
+            queryString = "SELECT * FROM dnd_spelldescriptor WHERE id IN (SELECT DISTINCT spelldescriptor_id FROM dnd_spell_descriptors)";
+            tx.executeSql(queryString, [], (tx, results) => {
+                var len = results.rows.length;
+                for (let i = 0; i < len; i++) {
+                    this.state.descriptors.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
                 }
             },
                 (error) => console.log(error)
@@ -95,38 +110,53 @@ class SearchScreen extends React.Component {
         let levelQueryString = '';
         if (levels.length !== 0) {
             levelQueryString += addLigature();
-            levels.map(level => levelQueryString += 'dnd_spellclasslevel.level=' + level.id + ' OR');
+            levels.map(level => levelQueryString += ' dnd_spellclasslevel.level=' + level.id + ' OR');
             levelQueryString = levelQueryString.substr(0, levelQueryString.length - 3) + ')';
         }
         let classes = this.state.classes.selected;
         classQueryString = '';
         if (classes.length !== 0) {
             classQueryString += addLigature();
-            classes.map(sclass => classQueryString += 'dnd_spellclasslevel.character_class_id=' + sclass.id + ' OR');
+            classes.map(sclass => classQueryString += ' dnd_spellclasslevel.character_class_id=' + sclass.id + ' OR');
             classQueryString = classQueryString.substr(0, classQueryString.length - 3) + ')';
         }
         let schools = this.state.schools.selected;
         schoolQueryString = '';
         if (schools.length !== 0) {
             schoolQueryString += addLigature();
-            schools.map(school => schoolQueryString += 'dnd_spell.school_id=' + school.id + ' OR');
+            schools.map(school => schoolQueryString += ' dnd_spell.school_id=' + school.id + ' OR');
             schoolQueryString = schoolQueryString.substr(0, schoolQueryString.length - 3) + ')';
+        }
+        let descriptors = this.state.descriptors.selected;
+        descriptorQueryString = '';
+        if (descriptors.length !== 0) {
+            descriptorQueryString += addLigature();
+            descriptors.map(descriptor => descriptorQueryString += ' dnd_spell_descriptors.spelldescriptor_id=' + descriptor.id + ' OR');
+            descriptorQueryString = descriptorQueryString.substr(0, descriptorQueryString.length - 3) + ')';
         }
         let spellName = this.state.spellName;
         let spellNameQueryString = '';
         if (spellName !== '') {
-            spellNameQueryString += addLigature() + 'dnd_spell.name LIKE \'%' + spellName + '%\')';
+            spellNameQueryString += addLigature() + ' dnd_spell.name LIKE \'%' + spellName + '%\')';
+        }
+        let spellText = this.state.spellText;
+        let spellTextQueryString = '';
+        if (spellText !== '') {
+            spellTextQueryString += addLigature() + ' dnd_spell.description LIKE \'%' + spellText + '%\')';
         }
         var newRecords = [];
         this.state.db.transaction((tx) => {
-            let queryString = 'SELECT *, dnd_spell.id as master_id, dnd_spellschool.name AS school_name, dnd_spell.name as spell_name, dnd_spelldomainlevel.level AS domain_level, dnd_domain.name AS domain_name, dnd_characterclass.name AS class_name ' // Disambiguate names
-            + 'FROM dnd_spell ' // Main database
+            let queryString = 'SELECT *, dnd_spell.id as master_id, dnd_spellschool.name AS school_name, dnd_spell.name as spell_name, dnd_spelldescriptor.name as descriptor_name, dnd_spellclasslevel.level as class_level, dnd_spelldomainlevel.level AS domain_level, dnd_domain.name AS domain_name, dnd_characterclass.name AS class_name ' // Disambiguate names
+            + 'FROM dnd_spell ' // Main table
             + 'INNER JOIN dnd_spellclasslevel on dnd_spell.id = dnd_spellclasslevel.spell_id ' // match spell level for each class
             + 'INNER JOIN dnd_spellschool ON dnd_spell.school_id = dnd_spellschool.id ' // match domain names
             + 'LEFT JOIN dnd_spelldomainlevel ON dnd_spell.id = dnd_spelldomainlevel.spell_id ' // add in domain levels
+            //	group_concat(dnd_spelldescriptor.name, ', ') as descriptor_name,
             + 'LEFT JOIN dnd_domain ON dnd_spelldomainlevel.domain_id = dnd_domain.id ' // add in domain names
             + 'LEFT JOIN dnd_characterclass ON dnd_spellclasslevel.character_class_id = dnd_characterclass.id ' // add in class names
-            + levelQueryString + classQueryString + schoolQueryString + spellNameQueryString;
+            + 'LEFT JOIN dnd_spell_descriptors ON dnd_spell.id = dnd_spell_descriptors.spell_id ' // add in spell descriptors ids
+            + 'LEFT JOIN dnd_spelldescriptor ON dnd_spell_descriptors.spelldescriptor_id = dnd_spelldescriptor.id ' // add in spell descriptors names
+            + levelQueryString + classQueryString + schoolQueryString + descriptorQueryString + spellNameQueryString + spellTextQueryString;
             console.log(queryString);
             tx.executeSql(queryString, [], (tx, results) => {
                 console.log("Query completed");
@@ -158,7 +188,7 @@ class SearchScreen extends React.Component {
         const { navigate } = this.props.navigation;
 
         return (
-            <View style={styles.container}>
+            <ScrollView style={styles.container}>
                 <TextInput
                     style={styles.spellNameInput}
                     onChangeText={(text) => this.setState({spellName: text})}
@@ -188,26 +218,49 @@ class SearchScreen extends React.Component {
                     selectionInfo={this.state.schools} // Pass down the relevant current state though
                     modalStyles={{width: 250, height: 250}}
                 />
+                
+                <SearchItemModalPicker
+                    name='Spell Descriptor'
+                    toggleItem={this.toggleItemSelection.bind(this)} // Handle state update in this component
+                    selectionInfo={this.state.descriptors} // Pass down the relevant current state though
+                    modalStyles={{width: 250, height: 250}}
+                />
+
+                <TextInput
+                    style={styles.spellTextInput}
+                    onChangeText={(text) => this.setState({spellText: text})}
+                    autoCorrect={false}
+                    autoFocus={false}
+                    clearTextOnFocus={true}
+                    placeholder={'Spell Description'}
+                />
 
                 <Button
-                title="Search"
-                onPress={() => {
-                    this.query();
-                }}
+                    style={styles.searchButton}
+                    title="Search"
+                    onPress={() => {
+                        this.query();
+                    }}
                 />
-            </View>
+            </ScrollView>
         );
     }
 }
 
 var styles = {
     container: {
-        flex: 1,
-        justifyContent: 'center',
+        flex: 1
     },
     spellNameInput: {
+        borderRadius: 5,
+        borderWidth: 0,
         marginLeft: 10,
         marginRight: 10
+    },
+    spellTextInput: {
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 25
     }
 };
 

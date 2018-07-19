@@ -14,7 +14,12 @@ class ResultsScreen extends React.Component {
         if (typeof records !== 'undefined' && records.length !== 0) {
             return (
                 records.map(
-                    record => <SpellListElement key={''+record.master_id+record.character_class_id+record.school_id+record.domain_id} record={record} />
+                    record => 
+                        <SpellListElement 
+                            key={''+record.master_id+record.character_class_id+record.school_id+record.domain_id+record.spelldescriptor_id} // Unique key
+                            record={record}
+                            nav={() => this.props.navigation.navigate('Detail', {record: record})} // Navigate to detail function for child to display
+                        />
                 )
             );
         } else {

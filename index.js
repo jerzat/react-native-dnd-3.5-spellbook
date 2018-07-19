@@ -2,6 +2,7 @@ import React from 'react';
 import { AppRegistry } from 'react-native';
 import SearchScreen from './src/components/SearchScreen';
 import ResultsScreen from './src/components/ResultsScreen';
+import SpellDetail from './src/components/SpellDetail';
 import { createStackNavigator } from 'react-navigation';
 import { YellowBox } from 'react-native';
 
@@ -13,6 +14,7 @@ const App  = createStackNavigator(
     {
         Search: { screen: SearchScreen },
         Results: { screen: ResultsScreen },
+        Detail: { screen: SpellDetail }
     },
     {
         initialRouteName: 'Search',
