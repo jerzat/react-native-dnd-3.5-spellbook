@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import { ScrollView, View, Text, TouchableHighlight, Dimensions } from 'react-native';
+import React from 'react';
+import { ScrollView, View, Text, Icon } from 'react-native';
 
 class SpellDetail extends React.Component {
 
@@ -8,7 +8,7 @@ class SpellDetail extends React.Component {
         headerTitleStyle : {textAlign: 'center',alignSelf:'center'},
         headerStyle:{
             backgroundColor:'white',
-        },
+        }
     });
 
     render() {
@@ -22,16 +22,14 @@ class SpellDetail extends React.Component {
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={styles.detailTitleStyle}>Descriptor: </Text>
-                    <Text>{record.descriptor_name}</Text>
+                    <Text>{(record.descriptor !== undefined ? record.descriptor.map((desc) => {return(desc.name + ' ')}).toString().replace(/,/g,'') : '')}</Text>
                 </View>
                 <View style={styles.detailItem}>
                     <Text style={styles.detailTitleStyle}>Level: </Text>
                     <Text>
                         {
-                            (record.class_name ? record.class_name + ' ' : '') +
-                            +(record.class_level ? record.class_level : '')
-                            +(record.domain_name ? ' ' + record.domain_name + ' ' : '')
-                            +(record.domain_level ? record.domain_level : '')
+                            (record.class !== undefined ? record.class.map((sclass) => {return(sclass.name + ' ' + sclass.level + ' ')}).toString().replace(/,/g,'') : '')
+                            + (record.domain !== undefined ? record.domain.map((domain) => {return(domain.name + ' ' + domain.level + ' ')}).toString().replace(/,/g,'') : '')
                         }
                     </Text>
                 </View>

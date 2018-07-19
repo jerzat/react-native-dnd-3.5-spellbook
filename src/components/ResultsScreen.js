@@ -16,7 +16,7 @@ class ResultsScreen extends React.Component {
                 records.map(
                     record => 
                         <SpellListElement 
-                            key={''+record.master_id+record.character_class_id+record.school_id+record.domain_id+record.spelldescriptor_id} // Unique key
+                            key={''+record.master_id} // Unique key
                             record={record}
                             nav={() => this.props.navigation.navigate('Detail', {record: record})} // Navigate to detail function for child to display
                         />
@@ -30,7 +30,6 @@ class ResultsScreen extends React.Component {
     }
 
     render() {
-        const { navigate } = this.props.navigation;
         return (
             <ScrollView>
                 {this.showResults()}

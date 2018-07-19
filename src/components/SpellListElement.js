@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import { View, Text, TouchableHighlight, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableHighlight } from 'react-native';
 
 const SpellListElement = (props) => {
 
@@ -19,10 +19,8 @@ const SpellListElement = (props) => {
                     <View style={styles.rightChunkStyle}>
                         <Text style={styles.spellLevelStyle}>
                             {
-                                (props.record.class_name ? props.record.class_name + ' ' : '') +
-                                +(props.record.class_level ? props.record.class_level : '')
-                                +(props.record.domain_name ? ' ' + props.record.domain_name + ' ' : '')
-                                +(props.record.domain_level ? props.record.domain_level : '')
+                                (props.record.class !== undefined ? props.record.class.map((sclass) => {return(sclass.name + ' ' + sclass.level + ' ')}).toString().replace(/,/g,'') : '')
+                                + (props.record.domain !== undefined ? props.record.domain.map((domain) => {return(domain.name + ' ' + domain.level + ' ')}).toString().replace(/,/g,'') : '')
                             }
                         </Text>
                         <Text style={styles.spellSchoolStyle}>

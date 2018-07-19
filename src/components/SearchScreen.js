@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, Button, ScrollView } from 'react-native';
+import { TextInput, Button, ScrollView } from 'react-native';
 import SearchItemModalPicker from './SearchItemModalPicker';
 
 class SearchScreen extends React.Component {
@@ -146,29 +146,65 @@ class SearchScreen extends React.Component {
         }
         var newRecords = [];
         this.state.db.transaction((tx) => {
-            let queryString = 'SELECT *, dnd_spell.id as master_id, dnd_spellschool.name AS school_name, dnd_spell.name as spell_name, dnd_spelldescriptor.name as descriptor_name, dnd_spellclasslevel.level as class_level, dnd_spelldomainlevel.level AS domain_level, dnd_domain.name AS domain_name, dnd_characterclass.name AS class_name ' // Disambiguate names
+            let queryString = 
+            'SELECT dnd_spell.school_id, dnd_spell.sub_school_id, dnd_spell.verbal_component, dnd_spell.somatic_component, dnd_spell.material_component, dnd_spell.arcane_focus_component, dnd_spell.divine_focus_component, dnd_spell.xp_component, dnd_spell.casting_time, dnd_spell.range, dnd_spell.target, dnd_spell.effect, dnd_spell.area, dnd_spell.duration, dnd_spell.saving_throw, dnd_spell.spell_resistance, dnd_spell.description, dnd_spell.extra_components,'
+            + 'dnd_spell.id as master_id, dnd_spellschool.name AS school_name, dnd_spell.name as spell_name, dnd_spell_descriptors.spelldescriptor_id, dnd_spelldescriptor.name as descriptor_name, dnd_spellclasslevel.character_class_id, dnd_spellclasslevel.level as class_level, dnd_spelldomainlevel.domain_id, dnd_spelldomainlevel.level AS domain_level, dnd_domain.name AS domain_name, dnd_characterclass.name AS class_name ' // Disambiguate names
             + 'FROM dnd_spell ' // Main table
             + 'INNER JOIN dnd_spellclasslevel on dnd_spell.id = dnd_spellclasslevel.spell_id ' // match spell level for each class
             + 'INNER JOIN dnd_spellschool ON dnd_spell.school_id = dnd_spellschool.id ' // match domain names
             + 'LEFT JOIN dnd_spelldomainlevel ON dnd_spell.id = dnd_spelldomainlevel.spell_id ' // add in domain levels
-            //	group_concat(dnd_spelldescriptor.name, ', ') as descriptor_name,
             + 'LEFT JOIN dnd_domain ON dnd_spelldomainlevel.domain_id = dnd_domain.id ' // add in domain names
             + 'LEFT JOIN dnd_characterclass ON dnd_spellclasslevel.character_class_id = dnd_characterclass.id ' // add in class names
             + 'LEFT JOIN dnd_spell_descriptors ON dnd_spell.id = dnd_spell_descriptors.spell_id ' // add in spell descriptors ids
             + 'LEFT JOIN dnd_spelldescriptor ON dnd_spell_descriptors.spelldescriptor_id = dnd_spelldescriptor.id ' // add in spell descriptors names
-            + levelQueryString + classQueryString + schoolQueryString + descriptorQueryString + spellNameQueryString + spellTextQueryString;
+            + levelQueryString + classQueryString + schoolQueryString + descriptorQueryString + spellNameQueryString + spellTextQueryString + ' ORDER BY master_id';
             console.log(queryString);
             tx.executeSql(queryString, [], (tx, results) => {
                 console.log("Query completed");
-    
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    let row = results.rows.item(i);
-                    newRecords.push(row);
-                }
+                newRecords = consolidate(results);
                 this.props.navigation.navigate('Results', {records: newRecords});
             });
         });
+
+        // Strip duplicate spells and consolidate data of stripped items
+        var consolidate = (results) => {
+
+            var checkForValueDuplicatesInNextrows = (row, nextRow, idField, nameField, levelField, newFieldName) => {
+
+                if (row[idField] !== undefined) { // this row has this item
+                    if (row[newFieldName] === undefined && row[idField] !== null) {
+                        row[newFieldName]=[{id: row[idField], name: row[nameField], level: row[levelField]}]; // consolidate two/three fields in one, with array
+                    }
+                    if (nextRow !== undefined && row[newFieldName] !== undefined && nextRow[idField] !== undefined) { // if next row has this item
+                        let newDescriptor = {id: nextRow[idField], name: nextRow[nameField], level: nextRow[levelField]}; // consolidate two/three fields, without array
+                        let newDescriptorAsString = JSON.stringify(newDescriptor); // stringify the item
+                        let comparedItems = row[newFieldName].map(desc => JSON.stringify(desc) == newDescriptorAsString); // check if any of our items in the array is the same as the new one
+                        let mismatchingItems = comparedItems.filter(x => x == true); // array containing items only if new item was already present
+                        if (mismatchingItems.length === 0) { // If there are no items, this is the first occurrence of a new item
+                            row[newFieldName].push(newDescriptor); // add it
+                        }
+                    }
+                }
+
+            }
+
+            var newRecords = [];
+            var len = results.rows.length;
+            for (let i = 0; i < len; i++) {
+                let row = results.rows.item(i);
+                let nextRow = results.rows.item(i+1);
+                do {
+                    checkForValueDuplicatesInNextrows(row, nextRow, 'spelldescriptor_id', 'descriptor_name', undefined, 'descriptor');
+                    checkForValueDuplicatesInNextrows(row, nextRow, 'character_class_id', 'class_name', 'class_level', 'class');
+                    checkForValueDuplicatesInNextrows(row, nextRow, 'domain_id', 'domain_name', 'domain_level', 'domain');
+                    nextRow = results.rows.item(++i);
+                }
+                while (nextRow !== undefined && row.master_id === nextRow.master_id) // next row exists and is the same spell
+                
+                newRecords.push(row);
+            }
+            return newRecords;
+        }
     }
        
     toggleItemSelection(type, item) {
