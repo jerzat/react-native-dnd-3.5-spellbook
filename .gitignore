@@ -57,3 +57,8 @@ buck-out/
 
 # db
 android/app/src/main/assets/main.sqlite
+
+# Visual Studio Code
+.vscode
+
+www
