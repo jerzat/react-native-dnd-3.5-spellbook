@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, TouchableWithoutFeedback, Text, TouchableHighlight, TouchableOpacity, Modal, Button } from 'react-native';
+import { View, ScrollView, TouchableWithoutFeedback, Text, TouchableHighlight, TouchableOpacity, Modal, Button, Dimensions } from 'react-native';
 
 class SearchItemModalPicker extends React.Component {
 
@@ -19,8 +19,8 @@ class SearchItemModalPicker extends React.Component {
                 key={item.id}
                 onPress={() => this.props.toggleItem(this.props.selectionInfo.type, item)}
             >
-                <View style={[styles.selectableItemElement, this.props.selectionInfo.selected.includes(item) ? styles.selectableItemElementPressed : styles.selectableItemElementUnpressed]}>
-                    <Text>{''+item.name}</Text>
+                <View style={[styles.selectableItemElement, this.props.selectableStyles, this.props.selectionInfo.selected.includes(item) ? styles.selectableItemElementPressed : styles.selectableItemElementUnpressed]}>
+                    <Text style={[styles.selectableItemElementText, this.props.selectableTextStyles]}>{''+item.name}</Text>
                 </View>
             </TouchableHighlight>
         );
@@ -57,12 +57,10 @@ class SearchItemModalPicker extends React.Component {
                             contentContainerStyle={styles.scrollModal}
                         >
                             <TouchableWithoutFeedback>
-                                <View style={[styles.modalContent, style=this.props.modalStyles]}>
-                                    <ScrollView style={{flex: 1}}>
-                                        <View>
-                                            <View style={styles.selectableItemsContainer}>
-                                                {this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))}
-                                            </View>
+                                <View style={[styles.modalContent, this.props.modalStyles]}>
+                                    <ScrollView>
+                                        <View style={styles.selectableItemsContainer}>
+                                            {this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))}
                                         </View>
                                     </ScrollView>
 
@@ -80,7 +78,7 @@ class SearchItemModalPicker extends React.Component {
                 </Modal>
 
                 <TouchableHighlight
-                    underlayColor='#fff'
+                    underlayColor='#e9e9ef'
                     style={styles.mainButtonLabel}
                     onPress={() => {
                         this.setModalVisible(true);
@@ -108,28 +106,40 @@ var styles = {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 15 // Shadow
     },
     modalContent: {
         backgroundColor: '#ffffff',
         flexDirection: 'column',
         alignItems: 'stretch',
-        justifyContent: 'center'
+        justifyContent: 'flex-start',
+        alignSelf: 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: {width: 5, height: 5},
+        shadowRadius: 5,
+        shadowOpacity: 0.5,
+        borderRadius: 10,
+        elevation: 5,
+        minHeight: 50
     },
     selectableItemsContainer: {
         flexWrap: 'wrap',
-        alignItems: 'flex-start',
         flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 5
     },
     selectableItemElement: {
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: '#007aff',
+        borderRadius: 7,
+        borderWidth: 2,
+        borderColor: '#68b1ff',
         paddingTop: 3,
         paddingBottom: 3,
         paddingLeft: 7,
         paddingRight: 7,
-        margin: 5
+        margin: 5,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     selectableItemElementUnpressed: {
         backgroundColor: '#fff'
@@ -137,12 +147,16 @@ var styles = {
     selectableItemElementPressed: {
         backgroundColor: '#cfc'
     },
+    selectableItemElementText: {
+        textAlign: 'center',
+        textAlignVertical: 'center'
+    },
     mainButtonLabel: {
         borderRadius: 5,
-        borderWidth: 1,
-        borderColor: '#007aff',
-        paddingTop: 3,
-        paddingBottom: 3,
+        borderWidth: 2,
+        borderColor: '#68b1ff',
+        paddingTop: 5,
+        paddingBottom: 5,
         paddingLeft: 7,
         paddingRight: 7,
         margin: 10

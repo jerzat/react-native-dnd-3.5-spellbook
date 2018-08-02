@@ -8,8 +8,10 @@
   },
   "dependencies": {
     "eslint-config-rallycoding": "^3.2.0",
+    "pretty-format": "^23.2.0",
     "react": "16.3.1",
     "react-native": "0.55.4",
+    "react-native-loading-spinner-overlay": "^0.5.2",
     "react-native-popover-view": "^1.0.0",
     "react-native-sqlite-storage": "^3.3.6",
     "react-native-tab-view": "^1.0.2",
