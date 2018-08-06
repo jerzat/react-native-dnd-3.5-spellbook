@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Image, TextInput, Button, ScrollView, Dimensions, Alert, TouchableHighlight, Text } from 'react-native';
 import Spinner from 'react-native-loading-spinner-overlay';
 import SearchItemModalPicker from './SearchItemModalPicker';
+import { ThinBorderButton, TextSearchField } from './common';
 
 class SearchScreen extends React.Component {
 
@@ -67,59 +68,35 @@ class SearchScreen extends React.Component {
             (db) => {
                 console.log('database opened');
                 this.state.db = db;
-                this.initializeSelectables(db);
+                this.initializeSelectables();
             },
             () => console.log('failed to open database')
         )
     }
 
-    initializeSelectables(db) {
+    initializeSelectables() {
         // Shortcut for spell levels, no need for a query
         for (let i = 0; i < 10; i++) {
             this.state.spellLevel.selectable.push({id: i, name: i});
         }
 
+        // Generic function for pushing names and ids, provided a query returning the ordered items to populate in name columns
+        var queryAndInitialize = (tx, queryString, objectToPopulate) => {
+            tx.executeSql(queryString, [], (tx, results) => {
+                var len = results.rows.length;
+                for (let i = 0; i < len; i++) {
+                    objectToPopulate.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
+                }
+            },
+                (error) => console.log(error)
+            );
+        }
+
         this.state.db.transaction((tx) => {
-            // Spell Classes
-            let queryString = "SELECT * FROM dnd_characterclass WHERE id IN (SELECT DISTINCT character_class_id FROM dnd_spellclasslevel)";
-            tx.executeSql(queryString, [], (tx, results) => {
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    this.state.classes.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
-                }
-            },
-                (error) => console.log(error)
-            );
-            // Spell Domains
-            queryString = "SELECT * FROM dnd_domain ORDER BY name";
-            tx.executeSql(queryString, [], (tx, results) => {
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    this.state.domains.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
-                }
-            },
-                (error) => console.log(error)
-            );
-            // Schools
-            queryString = "SELECT * FROM dnd_spellschool WHERE id IN (SELECT DISTINCT school_id FROM dnd_spell)";
-            tx.executeSql(queryString, [], (tx, results) => {
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    this.state.schools.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
-                }
-            },
-                (error) => console.log(error)
-            );
-            // Descriptors
-            queryString = "SELECT * FROM dnd_spelldescriptor WHERE id IN (SELECT DISTINCT spelldescriptor_id FROM dnd_spell_descriptors) ORDER BY name";
-            tx.executeSql(queryString, [], (tx, results) => {
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    this.state.descriptors.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
-                }
-            },
-                (error) => console.log(error)
-            );
+            queryAndInitialize(tx, 'SELECT * FROM dnd_characterclass WHERE id IN (SELECT DISTINCT character_class_id FROM dnd_spellclasslevel)', this.state.classes);
+            queryAndInitialize(tx, 'SELECT * FROM dnd_domain ORDER BY name', this.state.domains);
+            queryAndInitialize(tx, 'SELECT * FROM dnd_spellschool WHERE id IN (SELECT DISTINCT school_id FROM dnd_spell)', this.state.schools);
+            queryAndInitialize(tx, 'SELECT * FROM dnd_spelldescriptor WHERE id IN (SELECT DISTINCT spelldescriptor_id FROM dnd_spell_descriptors) ORDER BY name', this.state.descriptors);
             this.baseState = this.state;
         });
     }
@@ -337,23 +314,24 @@ class SearchScreen extends React.Component {
         this.setState({[type]: {type: type, selectable: this.state[type].selectable, selected: newSelection}}); // Push changes to state
     }
 
+    clear() {
+        this.setState(this.baseState);
+        this.spellNameInput.clear();
+        this.spellTextInput.clear();
+    }
+
     render() {
         
         const window = Dimensions.get('window');
 
         return (
             <ScrollView style={styles.container}>
-                <View style={[styles.textInputContainer, {marginTop: 15}]}>
-                    <Image style={styles.textInputImage} source={require('../img/searchIcon.png')} resizeMode='contain' />
-                    <TextInput
-                        style={styles.spellNameInput}
-                        onChangeText={(text) => this.setState({spellName: text})}
-                        autoCorrect={false}
-                        autoFocus={false}
-                        placeholder={'Spell Name'}
-                        ref={(input) => { this.spellNameInput = input }}
-                    />
-                </View>
+                <TextSearchField
+                    onChangeText={(text) => this.setState({spellName: text})}
+                    placeholder={'Spell Name'}
+                    textInputRef={(input) => { this.spellNameInput = input }}
+                    style={{ marginTop: 15 }}
+                />
 
                 <SearchItemModalPicker
                     name='Spell Level'
@@ -406,38 +384,20 @@ class SearchScreen extends React.Component {
                     modalStyles={{width: window.width * 0.7, maxHeight: window.height * 0.5}}
                 />
 
-                <View style={[styles.textInputContainer, {marginBottom: 15}]}>
-                    <Image style={styles.textInputImage} source={require('../img/searchIcon.png')} resizeMode='contain' />
-                    <TextInput
-                        style={styles.spellTextInput}
-                        onChangeText={(text) => this.setState({spellText: text})}
-                        autoCorrect={false}
-                        autoFocus={false}
-                        placeholder={'Spell Description'}
-                        ref={(input) => { this.spellTextInput = input }}
-                    />
-                </View>
+                <TextSearchField
+                    onChangeText={(text) => this.setState({spellText: text})}
+                    placeholder={'Spell Description'}
+                    textInputRef={(input) => { this.spellTextInput = input }}
+                    style={{ marginTop: 15 }}
+                />
 
-                <TouchableHighlight
-                    style={[styles.buttonStyle, styles.searchButton]}
-                    underlayColor='#e9e9ef'
-                    onPress={() => {
-                        this.query();
-                    }}
-                >
-                    <Text style={[styles.buttonText, styles.searchText]}>Search</Text>
-                </TouchableHighlight>
-                <TouchableHighlight
-                    style={[styles.buttonStyle, styles.clearButton]}
-                    underlayColor='#e9e9ef'
-                    onPress={() => {
-                        this.setState(this.baseState);
-                        this.spellNameInput.clear();
-                        this.spellTextInput.clear();
-                    }}
-                >
-                    <Text style={[styles.buttonText, styles.clearText]}>Clear</Text>
-                </TouchableHighlight>
+                <ThinBorderButton color='#4286f4' onPress={() => this.query()}>
+                    Search
+                </ThinBorderButton>
+
+                <ThinBorderButton color='#ee1111' small onPress={() => this.clear()} style={{marginTop: 15}}>
+                    Clear
+                </ThinBorderButton>
 
                 <View style={{ flex: 1 }}>
                   <Spinner visible={this.state.spinnerVisible} textContent={"Consulting manuals..."} textStyle={{color: '#FFF'}} />
@@ -469,39 +429,6 @@ var styles = {
     },
     spellTextInput: {
         flex: 1
-    },
-    buttonStyle: {
-        borderWidth: 1,
-        backgroundColor: '#e9e9ef',
-        borderRadius: 10,
-        alignSelf: 'center',
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    buttonText: {
-    },
-    searchButton: {
-        borderColor: '#4286f4'
-    },
-    clearButton: {
-        borderColor: '#ee1111',
-        marginTop: 10
-    },
-    searchText: {
-        color: '#4286f4',
-        fontSize: 20,
-        paddingLeft: 30,
-        paddingRight: 30,
-        paddingTop: 5,
-        paddingBottom: 5
-    },
-    clearText: {
-        color: '#ee1111',
-        fontSize: 16,
-        paddingLeft: 20,
-        paddingRight: 20,
-        paddingTop: 3,
-        paddingBottom: 3
     }
 };
 

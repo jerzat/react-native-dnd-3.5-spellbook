@@ -4859,6 +4859,10 @@ react-native-drawer-layout@1.3.2:
   dependencies:
     react-native-dismiss-keyboard "1.0.0"
 
+react-native-loading-spinner-overlay@^0.5.2:
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/react-native-loading-spinner-overlay/-/react-native-loading-spinner-overlay-0.5.2.tgz#b7bcd277476d596615fd7feee601789f9bdc7acc"
+
 react-native-popover-view@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/react-native-popover-view/-/react-native-popover-view-1.0.0.tgz#6885088a3ed298c92aff09407c8dc400d4c460d2"

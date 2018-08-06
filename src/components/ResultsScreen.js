@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Text, Button } from 'react-native';
+import { ScrollView, Text, Button, FlatList } from 'react-native';
 import SpellListElement from './SpellListElement';
 
 class ResultsScreen extends React.Component {
@@ -8,32 +8,22 @@ class ResultsScreen extends React.Component {
         title: 'Results',
     };
 
-
-    showResults() {
-        const records = this.props.navigation.getParam('records');
-        if (typeof records !== 'undefined' && records.length !== 0) {
-            return (
-                records.map(
-                    record => 
-                        <SpellListElement 
-                            key={''+record.master_id} // Unique key
-                            record={record}
-                            nav={() => this.props.navigation.navigate('Detail', {record: record})} // Navigate to detail function for child to display
-                        />
-                )
-            );
-        } else {
-            return (
-                <Text>No results</Text>
-            );
-        }
+    renderItem({item}) {
+        return(
+            <SpellListElement
+                record={item}
+                nav={() => this.props.navigation.navigate('Detail', {record: item})} // Navigate to detail function for child to display
+            />
+        );
     }
 
     render() {
         return (
-            <ScrollView>
-                {this.showResults()}
-            </ScrollView>
+            <FlatList
+                data={this.props.navigation.getParam('records')} // Pass on object containing the list of items we will list
+                renderItem={this.renderItem.bind(this)} // What to do with each item when displaying it
+                keyExtractor={(record) => JSON.stringify(record.master_id)}
+            />
         );
     }
 }
