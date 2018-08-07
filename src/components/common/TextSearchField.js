@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { View, Image, TextInput } from 'react-native';
 
 const TextSearchField = (props) => {

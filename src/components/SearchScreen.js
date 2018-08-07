@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, TextInput, Button, ScrollView, Dimensions, Alert, TouchableHighlight, Text } from 'react-native';
+import { View, ScrollView, Dimensions, Alert } from 'react-native';
 import Spinner from 'react-native-loading-spinner-overlay';
 import SearchItemModalPicker from './SearchItemModalPicker';
 import { ThinBorderButton, TextSearchField } from './common';
@@ -7,7 +7,7 @@ import { ThinBorderButton, TextSearchField } from './common';
 class SearchScreen extends React.Component {
 
     static navigationOptions = {
-        title: 'Search',
+        title: 'Spell Search',
     };
 
     state = {
@@ -391,11 +391,11 @@ class SearchScreen extends React.Component {
                     style={{ marginTop: 15 }}
                 />
 
-                <ThinBorderButton color='#4286f4' onPress={() => this.query()}>
+                <ThinBorderButton color='#4286f4' onPress={() => this.query()} style={{margin: 15}}>
                     Search
                 </ThinBorderButton>
 
-                <ThinBorderButton color='#ee1111' small onPress={() => this.clear()} style={{marginTop: 15}}>
+                <ThinBorderButton color='#ee1111' small onPress={() => this.clear()} style={{marginBottom: 15}}>
                     Clear
                 </ThinBorderButton>
 

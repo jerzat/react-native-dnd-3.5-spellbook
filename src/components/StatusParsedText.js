@@ -14,7 +14,7 @@ class StatusParsedText extends React.Component {
         {id: 3, name: /blind/},
         {id: 4, name: /blow/},
         {id: 5, name: /checked/},
-        {id: 6, name: /confuse/},
+        {id: 6, name: /confus/},
         {id: 7, name: /cower/},
         {id: 8, name: /daze/},
         {id: 9, name: /dazzle/},

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Text, Button, FlatList } from 'react-native';
+import { FlatList } from 'react-native';
 import SpellListElement from './SpellListElement';
 
 class ResultsScreen extends React.Component {
