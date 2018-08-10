@@ -1,18 +1,27 @@
 import React, { Component } from 'react';
 import { View, AsyncStorage, FlatList } from 'react-native';
 import ProfileItem from './ProfileItem';
+import ProfileCreation from './ProfileCreation';
+import { BorderDismissableModal } from './common';
+import { NavigationActions } from 'react-navigation';
 
 class ProfileSelection extends Component {
 
     state = {
-        profiles: null
+        profiles: null,
+        modalVisible: false
     }
 
     static navigationOptions = {
-        title: 'Profile Selection'
+        title: 'Profile Selection',
+        headerBackTitle: 'Profiles' // iOS back string for *following* screen, pointing back to this
     };
 
-    async componentWillMount() { // Get profiles from storage
+    async componentWillMount() {
+        await this.updateList();
+    }
+
+    async updateList() {  // Get profiles from storage
         try {
             value = await AsyncStorage.getItem('profiles');
             this.setState({profiles: JSON.parse(value)});
@@ -21,15 +30,34 @@ class ProfileSelection extends Component {
         }
     }
 
+    async onNewProfileSuccess() {
+        this.setModalVisible(false);
+        await this.updateList();
+    }
+
+    setModalVisible(visible) {
+        this.setState({modalVisible: visible});
+    }
+
     renderItem({item}) {
-        return <ProfileItem>{item.name}</ProfileItem>;
+        return (
+            <ProfileItem onPress={() => this.props.navigation.navigate(
+                'Selected', // First, navigate to ProfileNavigator
+                item/*,
+                NavigationActions.navigate({ // Then, navigate to 
+                    routeName: 'Prepared'
+                })*/
+            )}>
+                {item.name}
+            </ProfileItem>
+        );
     }
 
     footerItem() {
         return(
             <ProfileItem
                 style={{borderColor: '#68b1ff'}}
-                onPress={() => this.props.navigation.navigate('ProfileCreation')}
+                onPress={() => this.setModalVisible(true)}
             >
                 Add new profile
             </ProfileItem>
@@ -45,6 +73,12 @@ class ProfileSelection extends Component {
                     keyExtractor={(item, i) => i.toString()} // Use array index as key
                     ListFooterComponent={() => this.footerItem()}
                 />
+                <BorderDismissableModal
+                    visible={this.state.modalVisible}
+                    visibilitySetter={(visibility) => this.setModalVisible(visibility)}
+                >
+                    <ProfileCreation onSuccess={() => this.onNewProfileSuccess()}/>
+                </BorderDismissableModal>
             </View>
         );
     }

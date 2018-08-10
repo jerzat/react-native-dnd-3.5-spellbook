@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { AppRegistry, YellowBox, AsyncStorage } from 'react-native';
+import { AppRegistry, YellowBox, AsyncStorage, View } from 'react-native';
 import TopLevelNavigator from './src/components/TopLevelNavigator';
 
 YellowBox.ignoreWarnings(['Warning: isMounted(...) is deprecated', 'Module RCTImageLoader']); // Until 0.56 is stable ...
@@ -20,12 +20,20 @@ class App extends Component {
                 try {
                     await AsyncStorage.setItem('profiles', JSON.stringify([
                         {
-                            name: 'Test prep caster w/spellbook',
-                            type: 'preparedSpellbook' // 'preparedSpellbook', 'preparedList', 'spontaneous'
+                            name: 'Test Wizard',
+                            type: 'preparedSpellbook', // 'preparedSpellbook', 'preparedList', 'spontaneous'
+                            available: [{ id: 243 }, { id: 677 }]
+                            
                         },
                         {
-                            name: 'Test spontaneous caster',
-                            type: 'spontaneous'
+                            name: 'Test Sorcerer',
+                            type: 'spontaneous',
+                            available: [{ id: 343 }]
+                        },
+                        {
+                            name: 'Test Cleric',
+                            type: 'preparedList',
+                            available: []
                         }
                     ]));
                     await AsyncStorage.setItem('initialized', 'true');
@@ -40,7 +48,9 @@ class App extends Component {
     }
 
     render() {
-        return <TopLevelNavigator />
+        return (
+            <TopLevelNavigator />
+        );
     }
 }
 

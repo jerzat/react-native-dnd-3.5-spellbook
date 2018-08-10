@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView, TouchableWithoutFeedback, Text, TouchableHighlight, TouchableOpacity, Modal, Button, Dimensions } from 'react-native';
+import { BorderDismissableModal } from './common';
 
 class SearchItemModalPicker extends React.Component {
 
@@ -39,43 +40,25 @@ class SearchItemModalPicker extends React.Component {
     render() {
         return(
             <View>
-
-                <Modal
-                    animationType="fade"
-                    transparent={true}
+                <BorderDismissableModal
                     visible={this.state.modalVisible}
-                    onRequestClose={() => { // Back button
-                        this.setModalVisible(false);
-                    }}>
-                    <TouchableOpacity 
-                        style={styles.modalContainer} 
-                        activeOpacity={1} 
-                        onPressOut={() => {this.setModalVisible(false)}}
-                    >
-                        <ScrollView 
-                            directionalLockEnabled={true} 
-                            contentContainerStyle={styles.scrollModal}
-                        >
-                            <TouchableWithoutFeedback>
-                                <View style={[styles.modalContent, this.props.modalStyles]}>
-                                    <ScrollView>
-                                        <View style={styles.selectableItemsContainer}>
-                                            {this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))}
-                                        </View>
-                                    </ScrollView>
+                    visibilitySetter={(visibility) => this.setModalVisible(visibility)}
+                    modalStyles={this.props.modalStyles}
+                >
+                    <ScrollView>
+                        <View style={styles.selectableItemsContainer}>
+                            {this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))}
+                        </View>
+                    </ScrollView>
 
-                                    <Button
-                                        style={{alignSelf: 'flex-end'}}
-                                        title='Done'
-                                        onPress={() => {
-                                            this.setModalVisible(!this.state.modalVisible);
-                                        }}>
-                                    </Button>
-                                </View>
-                            </TouchableWithoutFeedback>
-                        </ScrollView>
-                    </TouchableOpacity>
-                </Modal>
+                    <Button
+                        style={{alignSelf: 'flex-end'}}
+                        title='Done'
+                        onPress={() => {
+                            this.setModalVisible(!this.state.modalVisible);
+                        }}>
+                    </Button>
+                </BorderDismissableModal>
 
                 <TouchableHighlight
                     underlayColor='#e9e9ef'

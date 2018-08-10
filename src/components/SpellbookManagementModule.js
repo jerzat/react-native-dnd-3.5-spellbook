@@ -2,15 +2,15 @@ import React from 'react';
 import { Image } from 'react-native';
 import { createStackNavigator } from 'react-navigation';
 import ProfileSelection from './ProfileSelection';
-import ProfileCreation from './ProfileCreation';
+import ProfileNavigator from './ProfileNavigator';
 
 const SpellBookManagementModule = createStackNavigator(
     {
-        ProfileSelection: { screen: ProfileSelection },
-        ProfileCreation: { screen: ProfileCreation }
+        Selection: ProfileSelection,
+        Selected: ProfileNavigator
     },
     {
-        initialRouteName: 'ProfileSelection'
+        initialRouteName: 'Selection'
     }
 );
 
