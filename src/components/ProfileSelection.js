@@ -17,14 +17,20 @@ class ProfileSelection extends Component {
         headerBackTitle: 'Profiles' // iOS back string for *following* screen, pointing back to this
     };
 
-    async componentWillMount() {
+    async componentDidMount() {
+        this.subs = [this.props.navigation.addListener('didFocus', () => this.updateList()),];
         await this.updateList();
+    }
+
+    componentWillUnmount() {
+        this.subs.forEach(sub => sub.remove());
     }
 
     async updateList() {  // Get profiles from storage
         try {
-            value = await AsyncStorage.getItem('profiles');
-            this.setState({profiles: JSON.parse(value)});
+            profiles = JSON.parse(await AsyncStorage.getItem('profiles'));
+            profiles.sort((a, b) => a.id - b.id);
+            this.setState({ profiles });
         } catch (error) {
             console.log(error);
         }

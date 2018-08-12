@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, View, TouchableOpacity, Modal, ScrollView, TouchableWithoutFeedback, Dimensions } from 'react-native';
+import { connect } from 'react-redux';
 
 
 class StatusParsedText extends React.Component {
@@ -76,28 +77,12 @@ class StatusParsedText extends React.Component {
     }
 
     conditionQuery (condition, ref) {
-        var SQLite = require('react-native-sqlite-storage');
-        SQLite.enablePromise(true);
-        SQLite.openDatabase(
-            {
-                name: 'dnd.db',
-                createFromLocation: "~main.sqlite",
-                location:'Library',
-                readOnly: true
-            },
-            (db) => {
-                db.transaction((tx) => {
-                    let queryString = "SELECT * FROM dnd_rules_conditions WHERE id=\'" + condition.id +'\'';
-                    tx.executeSql(queryString, [], (tx, results) => {
-                        this.setState({modalText: results.rows.item(0).description});
-                        this.setModalVisible(true);
-                    },
-                        (error) => console.log(error)
-                    );
-                });
-            },
-            () => console.log('failed to open database')
-        )
+        let queryString = "SELECT * FROM dnd_rules_conditions WHERE id=\'" + condition.id +'\'';
+        this.props.db.executeSql(queryString)
+            .then(([results]) => {
+                this.setState({modalText: results.rows.item(0).description});
+                this.setModalVisible(true);
+        });
     }
 
     setModalVisible(visible) {
@@ -198,4 +183,8 @@ var styles = {
     }
 };
 
-export default StatusParsedText;
+const mapStateToProps = state => {
+    return { db: state.dataBase }
+}
+
+export default connect(mapStateToProps)(StatusParsedText);

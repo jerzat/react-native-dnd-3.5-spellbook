@@ -4,6 +4,8 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import SearchItemModalPicker from './SearchItemModalPicker';
 import { ThinBorderButton, TextSearchField } from './common';
 import QueryHelper from './QueryHelper';
+import * as actions from '../actions';
+import { connect } from 'react-redux';
 
 class SearchScreen extends React.Component {
 
@@ -69,6 +71,7 @@ class SearchScreen extends React.Component {
             (db) => {
                 console.log('database opened');
                 this.state.db = db;
+                this.props.storeDBConnection(db);
                 this.initializeSelectables();
             },
             () => console.log('failed to open database')
@@ -120,11 +123,7 @@ class SearchScreen extends React.Component {
 
         QueryHelper.searchQuery(this.state)
             .then((newRecords) => {
-
-                console.log(newRecords);
-
                 this.setState({spinnerVisible: false});
-
                 this.props.navigation.navigate('Results', {records: newRecords});
             });
            
@@ -260,4 +259,4 @@ var styles = {
     }
 };
 
-export default SearchScreen;
+export default connect(null, actions)(SearchScreen);

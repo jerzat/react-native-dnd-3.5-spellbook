@@ -1,6 +1,8 @@
 import React from 'react';
-import { ScrollView, View, Text, Icon } from 'react-native';
+import { ScrollView, View, Text } from 'react-native';
 import StatusParsedText from './StatusParsedText';
+import { ThinBorderButton } from './common';
+import ButtonAddSpellToList from './ButtonAddSpellToList';
 
 class SpellDetail extends React.Component {
 
@@ -9,7 +11,10 @@ class SpellDetail extends React.Component {
         headerTitleStyle : {textAlign: 'center',alignSelf:'center'},
         headerStyle:{
             backgroundColor:'white',
-        }
+        },
+        headerRight: <ButtonAddSpellToList spellId={navigation.state.params.record.master_id} />
+
+        
     });
 
     renderItem(name, content) {

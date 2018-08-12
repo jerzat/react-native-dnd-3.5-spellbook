@@ -10,6 +10,7 @@ class ProfileCreation extends Component {
 
     state = {
         newProfile: {
+            id: null,
             name: '',
             type: '',
             available: []
@@ -19,8 +20,11 @@ class ProfileCreation extends Component {
     async createProfile() {
         if (this.state.newProfile.name !== '' && this.state.newProfile.type !== '') {
             let profiles = JSON.parse(await AsyncStorage.getItem('profiles'));
+            let profilesCreated = parseInt(await AsyncStorage.getItem('profilesCreated')) + 1;
+            this.setState(({newProfile}) => ({newProfile: {...newProfile, id: profilesCreated}}));
             profiles.push(this.state.newProfile);
             await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+            await AsyncStorage.setItem('profilesCreated', '' + profilesCreated);
             this.props.onSuccess();
         } else {
             Alert.alert(
@@ -40,14 +44,14 @@ class ProfileCreation extends Component {
                 <View style={styles.innerContainerStyle}>
                     <TextInput
                         style={styles.textInputStyle}
-                        onChangeText={(text) => this.setState({newProfile: {name: text, type: this.state.newProfile.type}})} // setState is shallow ! Need to repeat objects within objects
+                        onChangeText={(text) => this.setState(({newProfile}) => ({newProfile: {...newProfile, name: text}}))} // setState is shallow ! Update only name
                         autoCorrect={false}
                         autoFocus={false}
                         placeholder='Profile Name'
                     />
                 </View>
                 <View style={styles.innerContainerStyle}>
-                    <SCTypeSelector onChange={(option) => {this.setState({newProfile: {name: this.state.newProfile.name, type: option.type}})}} style={styles.selectorStyle} />
+                    <SCTypeSelector onChange={(option) => {this.setState(({newProfile}) => ({newProfile: {...newProfile, type: option.type}}))}} style={styles.selectorStyle} />
                 </View>
                 <Button
                     style={{alignSelf: 'flex-end'}}
