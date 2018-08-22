@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, TouchableHighlight, Text } from 'react-native';
+import { View, TouchableHighlight, Text, Image } from 'react-native';
 import { AsyncStorage } from 'react-native';
 import ModalSelector from 'react-native-modal-selector';
 
@@ -63,9 +63,7 @@ class ButtonAddSpellToList extends Component {
                     style={styles.modalStyle}
                     cancelText='Close'
                 >
-                    <View style={styles.touchableStyle}>
-                        <Text style={styles.textStyle}>+</Text>
-                    </View>
+                    <Image style={styles.imageStyle} source={require('../img/addSpellToList.png')} resizeMode='contain' />
                 </ModalSelector>
             </View>
         );
@@ -73,6 +71,12 @@ class ButtonAddSpellToList extends Component {
 }
 
 const styles = {
+    imageStyle: {
+        height: 20,
+        width: 20,
+        marginRight: 10,
+        tintColor: '#4286f4'
+    },
     touchableStyle: {
         justifyContent: 'center',
         alignItems: 'center',

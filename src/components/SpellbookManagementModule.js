@@ -3,11 +3,15 @@ import { Image } from 'react-native';
 import { createStackNavigator } from 'react-navigation';
 import ProfileSelection from './ProfileSelection';
 import ProfileNavigator from './ProfileNavigator';
+import SpellDetail from './SpellDetail';
+import ProfileCreation from './ProfileCreation';
 
 const SpellBookManagementModule = createStackNavigator(
     {
         Selection: ProfileSelection,
-        Selected: ProfileNavigator
+        Selected: ProfileNavigator,
+        SpellDetailInProfile: SpellDetail,
+        ProfileCreation: ProfileCreation
     },
     {
         initialRouteName: 'Selection'

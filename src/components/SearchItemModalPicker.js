@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, TouchableWithoutFeedback, Text, TouchableHighlight, TouchableOpacity, Modal, Button, Dimensions } from 'react-native';
+import { View, ScrollView, Text, TouchableHighlight, Button } from 'react-native';
 import { BorderDismissableModal } from './common';
 
 class SearchItemModalPicker extends React.Component {
@@ -14,13 +14,14 @@ class SearchItemModalPicker extends React.Component {
 
     // Selectable items in the modal
     generateSelectable(item) {
+        let selected = this.props.selectionInfo.selected.findIndex(element => element.id === item.id);
         return(
             <TouchableHighlight
                 underlayColor='#fff'
                 key={item.id}
                 onPress={() => this.props.toggleItem(this.props.selectionInfo.type, item)}
             >
-                <View style={[styles.selectableItemElement, this.props.selectableStyles, this.props.selectionInfo.selected.includes(item) ? styles.selectableItemElementPressed : styles.selectableItemElementUnpressed]}>
+                <View style={[styles.selectableItemElement, this.props.selectableStyles, selected > -1 ? styles.selectableItemElementPressed : styles.selectableItemElementUnpressed]}>
                     <Text style={[styles.selectableItemElementText, this.props.selectableTextStyles]}>{''+item.name}</Text>
                 </View>
             </TouchableHighlight>

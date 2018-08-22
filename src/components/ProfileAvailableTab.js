@@ -1,13 +1,17 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, FlatList } from 'react-native';
-import SpellListElement from './SpellListElement';
+import { View, AsyncStorage, LayoutAnimation, Text } from 'react-native';
+import { SwipeListView } from 'react-native-swipe-list-view';
+import AvailableSpellListElement from './AvailableSpellListElement';
 import QueryHelper from './QueryHelper';
 import { connect } from 'react-redux';
+import SectionListHeader from './SectionListHeader';
+import AvailableSpellListFooter from './AvailableSpellListFooter';
 
 class ProfileAvailableTab extends Component {
 
     state = {
-        spells: []
+        spells: [],
+        profile: undefined
     }
 
     static navigationOptions = ({ screenProps }) => { // Set up tab label
@@ -57,26 +61,98 @@ class ProfileAvailableTab extends Component {
                     });
             })
         );
-        this.setState({ spells });
+        this.setState({ spells, profile });
     }
 
-    renderItem({item}) {
+    async deleteSpell(item) {
+        let spells = this.state.spells.slice();
+        spells.splice(spells.findIndex((element) => element.master_id === item.master_id), 1);
+        let profiles = []
+        try {
+            profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
+        } catch (error) {
+            console.log(error);
+        }
+        (profiles.find((element) => element.id === this.props.screenProps.id)).available.splice(profile.available.findIndex((element) => element.id === item.master_id), 1); // Remove spell from current profile
+        LayoutAnimation.spring();
+        this.setState({ spells });
+        await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+    }
+
+    renderItem({item, index, section}) {
         return(
-            <SpellListElement
+            <AvailableSpellListElement
                 record={item}
-                nav={() => this.props.navigation.navigate('Detail', {record: item})} // Navigate to detail function for child to display
+                nav={() => this.props.navigation.navigate('SpellDetailInProfile', {record: item})} // Navigate to detail function for child to display
+                deleteItem={() => this.deleteSpell(item)}
+            />
+        );
+    }
+
+    renderSectionHeader({section: { title }}) {
+        return(
+            <SectionListHeader>{title}</SectionListHeader>
+        );
+    }
+
+    generateSections() {
+        let sections = [];
+        for (let i = 0; i < 10; i++) {
+            sections.push({title: 'Level ' + i, data:[]})
+        }
+        this.state.spells.forEach((stateSpell) => {
+            let lowestClassDomainLevelMatch = 100; // Store lowest match from profile lists prefs here
+            let lowestClassDomainLevelForSpell = 100; // Store fallback lowest for spell here
+            if (stateSpell.class !== undefined && stateSpell.class.length > 0) { // First sort through classes
+                stateSpell.class.forEach((stateSpellClass) => {
+                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellClass.level);
+                    this.state.profile.lists.classes.forEach((profileClass) => {
+                        if (stateSpellClass.id === profileClass.id) {
+                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellClass.level);
+                        }
+                    });
+                });
+            }
+            if (stateSpell.domain !== undefined && stateSpell.domain.length > 0) { // Then domains
+                stateSpell.domain.forEach((stateSpellDomain) => {
+                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellDomain.level);
+                    this.state.profile.lists.domains.forEach((profileDomain) => {
+                        if (stateSpellDomain.id === profileDomain.id) {
+                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellDomain.level);
+                        }
+                    });
+                });
+            }
+            let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
+            sections[level].data.push(stateSpell);
+        });
+        // Prune empty sections
+        for (let i = 0; i < sections.length; i++) {
+            while (i < sections.length && sections[i].data.length === 0) {
+                sections.splice(i, 1);
+            }
+        };
+        return sections;
+    }
+
+    renderFooter() {
+        return(
+            <AvailableSpellListFooter
+                nav={() => this.props.navigation.navigate('SearchModule')}
             />
         );
     }
 
     render() {
-        console.log(this.state);
         return(
             <View>
-                <FlatList
-                    data={this.state.spells}
+                <SwipeListView
+                    useSectionList
+                    sections={this.generateSections()}
                     renderItem={this.renderItem.bind(this)}
+                    renderSectionHeader={this.renderSectionHeader.bind(this)}
                     keyExtractor={(spell) => JSON.stringify(spell.master_id)}
+                    ListFooterComponent={this.renderFooter()}
                 />
             </View>
         );

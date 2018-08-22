@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { createMaterialTopTabNavigator } from 'react-navigation';
 import ProfileAvailableTab from './ProfileAvailableTab';
 import ProfilePreparedTab from './ProfilePreparedTab';
+import ButtonEditProfile from './ButtonEditProfile';
 
 // This is the tab navigator, which needs to be wrapped into a class to process and route state and props
 const ProfileNavigatorTabs = createMaterialTopTabNavigator(
@@ -10,7 +11,8 @@ const ProfileNavigatorTabs = createMaterialTopTabNavigator(
         Prepared: ProfilePreparedTab
     },
     {
-        initialRouteName: 'Available'
+        initialRouteName: 'Available',
+        swipeEnabled: false
     }
 )
 
@@ -20,7 +22,8 @@ class ProfileNavigator extends Component {
     static router = ProfileNavigatorTabs.router;
 
     static navigationOptions = ({ navigation }) => ({ // Shenanigans to access this.state.navigation ... navigationOptions is actually a function (?), also, don't foget parenthesis in ({ key: param });
-        title: navigation.state.params.name
+        title: navigation.state.params.name,
+        headerRight: <ButtonEditProfile onPress={() => navigation.navigate('ProfileCreation', navigation.state.params)} />
     });
 
     render() {

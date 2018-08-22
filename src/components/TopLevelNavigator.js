@@ -4,11 +4,11 @@ import SpellbookManagementModule from './SpellbookManagementModule';
 
 const TopLevelNavigator = createBottomTabNavigator(
     {
-        Search: { screen: SearchModule },
+        SearchModule: { screen: SearchModule },
         SpellbookManagement: { screen: SpellbookManagementModule }
     },
     {
-        initialRouteName: 'Search'
+        initialRouteName: 'SearchModule'
     }
 );
 

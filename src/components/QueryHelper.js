@@ -211,6 +211,20 @@ class QueryHelper {
             });
         return QueryHelper.discardOldVersions(values);
     }
+
+    static async queryAndInitialize (db, queryString) {
+        let values = [];
+        await db.executeSql(queryString)
+            .then(([results]) => {
+                var len = results.rows.length;
+                for (let i = 0; i < len; i++) {
+                    values.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
+                }
+        },
+            (error) => console.log(error)
+        );
+        return values;
+    }
 }
 
 export default QueryHelper;

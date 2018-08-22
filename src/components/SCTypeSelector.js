@@ -2,6 +2,20 @@ import React from 'react';
 import ModalSelector from 'react-native-modal-selector';
 
 const SCTypeSelector = (props) => {
+
+    decodeSpellCasterTypeText = (type) => {
+        switch (type) {
+            case 'preparedSpellbook':
+                return 'Prepared, from spellbook';
+            case 'preparedList':
+                return 'Prepared, from list';
+            case 'spontaneous':
+                return 'Spontaneous';
+            default:
+                return 'Select spellcaster type';
+        }
+    }
+
     return(
         <ModalSelector
             data={[
@@ -11,7 +25,7 @@ const SCTypeSelector = (props) => {
             ]}
             keyExtractor={(option) => option.key}
             labelExtractor={(option) => option.label}
-            initValue='Select spellcaster type'
+            initValue={decodeSpellCasterTypeText(props.initValue)}
             onChange={props.onChange}
             animationType='fade'
             style={props.style}

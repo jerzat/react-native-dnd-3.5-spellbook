@@ -1,15 +1,12 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, FlatList } from 'react-native';
+import { View, AsyncStorage, Text, Alert, LayoutAnimation } from 'react-native';
 import ProfileItem from './ProfileItem';
-import ProfileCreation from './ProfileCreation';
-import { BorderDismissableModal } from './common';
-import { NavigationActions } from 'react-navigation';
+import { SwipeListView } from 'react-native-swipe-list-view';
 
 class ProfileSelection extends Component {
 
     state = {
-        profiles: null,
-        modalVisible: false
+        profiles: null
     }
 
     static navigationOptions = {
@@ -37,23 +34,38 @@ class ProfileSelection extends Component {
     }
 
     async onNewProfileSuccess() {
-        this.setModalVisible(false);
         await this.updateList();
     }
 
-    setModalVisible(visible) {
-        this.setState({modalVisible: visible});
+    deleteProfile(item) {
+        // Call this if user confirms in alert
+        var performDelete = async () => {
+            profiles = this.state.profiles.slice();
+            profiles.splice(profiles.findIndex((element) => element.id === item.id), 1);
+            LayoutAnimation.spring();
+            this.setState({ profiles });
+            await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+        }
+
+        let alertText = 'Delete ' + item.name + '?';
+        Alert.alert(
+            '',
+            alertText,
+            [
+                {text: 'Keep', onPress: null, style: 'cancel'},
+                {text: 'Delete', onPress: () => performDelete()}
+            ],
+            { cancelable: false }
+        );
     }
 
     renderItem({item}) {
         return (
-            <ProfileItem onPress={() => this.props.navigation.navigate(
-                'Selected', // First, navigate to ProfileNavigator
-                item/*,
-                NavigationActions.navigate({ // Then, navigate to 
-                    routeName: 'Prepared'
-                })*/
-            )}>
+            <ProfileItem
+                onPress={() => this.props.navigation.navigate('Selected', item)}
+                deleteItem={() => this.deleteProfile(item)}
+                preview={item.id===0}
+            >
                 {item.name}
             </ProfileItem>
         );
@@ -62,10 +74,10 @@ class ProfileSelection extends Component {
     footerItem() {
         return(
             <ProfileItem
-                style={{borderColor: '#68b1ff'}}
-                onPress={() => this.setModalVisible(true)}
+                onPress={() => this.props.navigation.navigate('ProfileCreation')}
+                disableSwipe
             >
-                Add new profile
+                <Text style={{color: '#4286f4', fontWeight: '500'}}>Add new profile</Text>
             </ProfileItem>
         );
     }
@@ -73,18 +85,13 @@ class ProfileSelection extends Component {
     render() {
         return (
             <View style={{flex: 1}}>
-                <FlatList
+                <SwipeListView
+                    useFlatList
                     data={this.state.profiles}
                     renderItem={this.renderItem.bind(this)}
-                    keyExtractor={(item, i) => i.toString()} // Use array index as key
+                    keyExtractor={(item) => item.id.toString()}
                     ListFooterComponent={() => this.footerItem()}
                 />
-                <BorderDismissableModal
-                    visible={this.state.modalVisible}
-                    visibilitySetter={(visibility) => this.setModalVisible(visibility)}
-                >
-                    <ProfileCreation onSuccess={() => this.onNewProfileSuccess()}/>
-                </BorderDismissableModal>
             </View>
         );
     }

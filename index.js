@@ -17,6 +17,7 @@ class App extends Component {
 
     async firstBootCheck() {
         //AsyncStorage.clear();
+        console.log(JSON.parse(await AsyncStorage.getItem('profiles')));
         try {
             const value = await AsyncStorage.getItem('initialized');
             if (value === null) {
@@ -27,20 +28,26 @@ class App extends Component {
                             id: 0,
                             name: 'Test Wizard',
                             type: 'preparedSpellbook', // 'preparedSpellbook', 'preparedList', 'spontaneous'
-                            available: [{ id: 243 }, { id: 677 }]
+                            lists: {classes: [{ id: 1, name: 'Wizard'}], domains: []},
+                            available: [{ id: 243 }, { id: 677 }, { id: 78 }, { id: 1245 }, { id: 377 }, { id: 682 }, { id: 111 }],
+                            prepared: []
                             
                         },
                         {
                             id: 1,
                             name: 'Test Sorcerer',
                             type: 'spontaneous',
-                            available: [{ id: 343 }]
+                            lists: {classes: [], domains: []},
+                            available: [{ id: 343 }, { id: 7 }, { id: 89 }, { id: 120 }, { id: 50 }, { id: 500 }, { id: 1867 }, { id: 1693 }, { id: 2100 }],
+                            prepared: []
                         },
                         {
                             id: 2,
                             name: 'Test Cleric',
                             type: 'preparedList',
-                            available: []
+                            lists: {classes: [], domains: []},
+                            available: [],
+                            prepared: []
                         }
                     ]));
                     await AsyncStorage.setItem('initialized', 'true');

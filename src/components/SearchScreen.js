@@ -78,31 +78,19 @@ class SearchScreen extends React.Component {
         )
     }
 
-    initializeSelectables() {
+    async initializeSelectables() {
+        let { spellLevel, classes, domains, schools, descriptors } = JSON.parse(JSON.stringify(this.state));
         // Shortcut for spell levels, no need for a query
         for (let i = 0; i < 10; i++) {
-            this.state.spellLevel.selectable.push({id: i, name: i});
+            spellLevel.selectable.push({id: i, name: i});
         }
 
-        // Generic function for pushing names and ids, provided a query returning the ordered items to populate in name columns
-        var queryAndInitialize = (tx, queryString, objectToPopulate) => {
-            tx.executeSql(queryString, [], (tx, results) => {
-                var len = results.rows.length;
-                for (let i = 0; i < len; i++) {
-                    objectToPopulate.selectable.push({id: results.rows.item(i).id, name: results.rows.item(i).name})
-                }
-            },
-                (error) => console.log(error)
-            );
-        }
-
-        this.state.db.transaction((tx) => {
-            queryAndInitialize(tx, 'SELECT * FROM dnd_characterclass WHERE id IN (SELECT DISTINCT character_class_id FROM dnd_spellclasslevel)', this.state.classes);
-            queryAndInitialize(tx, 'SELECT * FROM dnd_domain ORDER BY name', this.state.domains);
-            queryAndInitialize(tx, 'SELECT * FROM dnd_spellschool WHERE id IN (SELECT DISTINCT school_id FROM dnd_spell)', this.state.schools);
-            queryAndInitialize(tx, 'SELECT * FROM dnd_spelldescriptor WHERE id IN (SELECT DISTINCT spelldescriptor_id FROM dnd_spell_descriptors) ORDER BY name', this.state.descriptors);
-            this.baseState = this.state;
-        });
+        classes.selectable = await QueryHelper.queryAndInitialize(this.state.db, 'SELECT * FROM dnd_characterclass WHERE id IN (SELECT DISTINCT character_class_id FROM dnd_spellclasslevel)');
+        domains.selectable = await QueryHelper.queryAndInitialize(this.state.db, 'SELECT * FROM dnd_domain ORDER BY name');
+        schools.selectable = await QueryHelper.queryAndInitialize(this.state.db, 'SELECT * FROM dnd_spellschool WHERE id IN (SELECT DISTINCT school_id FROM dnd_spell)');
+        descriptors.selectable = await QueryHelper.queryAndInitialize(this.state.db, 'SELECT * FROM dnd_spelldescriptor WHERE id IN (SELECT DISTINCT spelldescriptor_id FROM dnd_spell_descriptors) ORDER BY name');
+        
+        this.setState({ spellLevel, classes, domains, schools, descriptors });
     }
 
     query() {
@@ -128,7 +116,7 @@ class SearchScreen extends React.Component {
             });
            
     }
-       
+    
     toggleItemSelection(type, item) {
         let newSelection = this.state[type].selected.slice();
         let index = newSelection.indexOf(item); // Find out if item is already selected

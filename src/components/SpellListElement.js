@@ -4,7 +4,7 @@ import { View, Text, TouchableHighlight } from 'react-native';
 const SpellListElement = (props) => {
 
     return (
-        <View style={styles.containerStyle}>
+        <View style={[styles.containerStyle, props.style]}>
             <TouchableHighlight
                 style={styles.touchableStyle}
                 onPress={props.nav}
@@ -41,7 +41,8 @@ const styles = {
         paddingTop: 2,
         paddingBottom: 2,
         borderBottomWidth: 1,
-        borderColor: '#777'
+        borderColor: '#777',
+        backgroundColor: '#e9e9ef'
     },
     innerContainerStyle: {
         flex: 1,
