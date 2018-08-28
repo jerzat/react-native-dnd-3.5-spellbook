@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { AppRegistry, YellowBox, AsyncStorage, View } from 'react-native';
+import { AppRegistry, YellowBox, AsyncStorage, Text } from 'react-native';
 import TopLevelNavigator from './src/components/TopLevelNavigator';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
@@ -17,7 +17,7 @@ class App extends Component {
 
     async firstBootCheck() {
         //AsyncStorage.clear();
-        console.log(JSON.parse(await AsyncStorage.getItem('profiles')));
+        //console.log(JSON.parse(await AsyncStorage.getItem('profiles')));
         try {
             const value = await AsyncStorage.getItem('initialized');
             if (value === null) {
@@ -29,9 +29,27 @@ class App extends Component {
                             name: 'Test Wizard',
                             type: 'preparedSpellbook', // 'preparedSpellbook', 'preparedList', 'spontaneous'
                             lists: {classes: [{ id: 1, name: 'Wizard'}], domains: []},
-                            available: [{ id: 243 }, { id: 677 }, { id: 78 }, { id: 1245 }, { id: 377 }, { id: 682 }, { id: 111 }],
-                            prepared: []
-                            
+                            available: [ {id: 2629 }, { id: 2833 }, { id: 2631 }, { id: 2408 }, { id: 2612 }, { id: 2630 }, { id: 2830 }, { id: 2590 }, { id: 2535 }],
+                            prepared: [
+                                { id: 2629, level: 0, amount: 2, modifier: '' },
+                                { id: 2833, level: 0, amount: 2, modifier: '' },
+                                { id: 2631, level: 1, amount: 3, modifier: '' },
+                                { id: 2408, level: 2, amount: 1, modifier: '' },
+                                { id: 2631, level: 2, amount: 1, modifier: 'Still' },
+                                { id: 2612, level: 3, amount: 2, modifier: '' },
+                            ],
+                            slots: [
+                                { level: 0, available: 0, prepared: 4, exhausted: 1 },
+                                { level: 1, available: 0, prepared: 3, exhausted: 0 },
+                                { level: 2, available: 2, prepared: 2, exhausted: 1 },
+                                { level: 3, available: 1, prepared: 2, exhausted: 0 },
+                                { level: 4, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 5, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 6, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 7, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 8, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 9, available: 0, prepared: 0, exhausted: 0 },
+                            ]
                         },
                         {
                             id: 1,
@@ -39,7 +57,19 @@ class App extends Component {
                             type: 'spontaneous',
                             lists: {classes: [], domains: []},
                             available: [{ id: 343 }, { id: 7 }, { id: 89 }, { id: 120 }, { id: 50 }, { id: 500 }, { id: 1867 }, { id: 1693 }, { id: 2100 }],
-                            prepared: []
+                            prepared: [],
+                            slots: [
+                                { level: 0, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 1, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 2, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 3, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 4, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 5, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 6, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 7, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 8, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 9, available: 0, prepared: 0, exhausted: 0 },
+                            ]
                         },
                         {
                             id: 2,
@@ -47,7 +77,19 @@ class App extends Component {
                             type: 'preparedList',
                             lists: {classes: [], domains: []},
                             available: [],
-                            prepared: []
+                            prepared: [],
+                            slots: [
+                                { level: 0, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 1, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 2, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 3, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 4, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 5, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 6, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 7, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 8, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 9, available: 0, prepared: 0, exhausted: 0 },
+                            ]
                         }
                     ]));
                     await AsyncStorage.setItem('initialized', 'true');

@@ -3,6 +3,28 @@ import { View, Text, TouchableHighlight } from 'react-native';
 
 const SpellListElement = (props) => {
 
+    renderRightChunk = () => {
+        if (props.amount !== undefined) { // Prepared spell list shows amount instead of class/domain info
+            return(
+                <Text style={styles.amountStyle}>{'×' + props.amount}</Text>
+            );
+        } else { // Other spell lists show class and domain info, plus school
+            return(
+                <View>
+                    <Text style={styles.spellLevelStyle}>
+                        {
+                            (props.record.class !== undefined ? props.record.class.map((sclass) => {return(sclass.name + ' ' + sclass.level + ' ')}).toString().replace(/,/g,'') : '')
+                            + (props.record.domain !== undefined ? props.record.domain.map((domain) => {return(domain.name + ' ' + domain.level + ' ')}).toString().replace(/,/g,'') : '')
+                        }
+                    </Text>
+                    <Text style={styles.spellSchoolStyle}>
+                        {props.record.school_name}
+                    </Text>
+                </View>
+            );
+        }
+    }
+
     return (
         <View style={[styles.containerStyle, props.style]}>
             <TouchableHighlight
@@ -17,15 +39,7 @@ const SpellListElement = (props) => {
                         </Text>
                     </View>
                     <View style={styles.rightChunkStyle}>
-                        <Text style={styles.spellLevelStyle}>
-                            {
-                                (props.record.class !== undefined ? props.record.class.map((sclass) => {return(sclass.name + ' ' + sclass.level + ' ')}).toString().replace(/,/g,'') : '')
-                                + (props.record.domain !== undefined ? props.record.domain.map((domain) => {return(domain.name + ' ' + domain.level + ' ')}).toString().replace(/,/g,'') : '')
-                            }
-                        </Text>
-                        <Text style={styles.spellSchoolStyle}>
-                            {props.record.school_name}
-                        </Text>
+                        {renderRightChunk()}
                     </View>
                 </View>
             </TouchableHighlight>
@@ -69,12 +83,17 @@ const styles = {
     spellLevelStyle: {
         textAlign: 'right',
         textAlignVertical: 'center',
-        fontSize: 12
+        fontSize: 11
     },
     spellSchoolStyle: {
         fontStyle: 'italic',
         textAlign: 'right',
         fontSize: 12
+    },
+    amountStyle: {
+        fontSize: 14,
+        textAlign: 'right',
+        marginRight: 15
     }
 }
 

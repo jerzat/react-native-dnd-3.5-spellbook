@@ -1,17 +1,21 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, LayoutAnimation, Text } from 'react-native';
+import { View, AsyncStorage, LayoutAnimation, Alert } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import AvailableSpellListElement from './AvailableSpellListElement';
 import QueryHelper from './QueryHelper';
 import { connect } from 'react-redux';
-import SectionListHeader from './SectionListHeader';
+import AvailableSectionListHeader from './AvailableSectionListHeader';
 import AvailableSpellListFooter from './AvailableSpellListFooter';
+import { BorderDismissableModal } from './common';
+import PrepareSpellModal from './PrepareSpellModal';
 
 class ProfileAvailableTab extends Component {
 
     state = {
         spells: [],
-        profile: undefined
+        profile: undefined,
+        sections: [], // Store processed sections here for list
+        prepareSpellModal: {visible: false, item: undefined}
     }
 
     static navigationOptions = ({ screenProps }) => { // Set up tab label
@@ -52,7 +56,7 @@ class ProfileAvailableTab extends Component {
             console.log(error);
         }
         profile = profiles.find((element) => element.id === this.props.screenProps.id);
-
+        
         await Promise.all(
             profile.available.map(async (spell) => {
                 await QueryHelper.getSpellById(this.props.db, spell.id)
@@ -62,6 +66,7 @@ class ProfileAvailableTab extends Component {
             })
         );
         this.setState({ spells, profile });
+        this.generateSections();
     }
 
     async deleteSpell(item) {
@@ -79,22 +84,86 @@ class ProfileAvailableTab extends Component {
         await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
     }
 
+    // Prepare spell once if a slot is available at the same level
+    async prepareSimple(item) {
+        newProfile = JSON.parse(JSON.stringify(this.state.profile));
+        let slot = newProfile.slots.find((element) => element.level === item.lowestLevel);
+        if (slot.available > 0) {
+            slot.available--;
+            slot.prepared++;
+            alreadyPrepSpell = newProfile.prepared.find((element) => element.id === item.master_id && element.level === item.lowestLevel && element.modifier === '');
+            if (alreadyPrepSpell !== undefined) {
+                alreadyPrepSpell.amount++;
+                console.log('Spell is already prepared, adding one');
+            } else {
+                newProfile.prepared.push({id: item.master_id, level: item.lowestLevel, amount: 1, modifier: ''});
+            }
+            this.setState({profile: newProfile});
+            profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
+            profiles.splice(profiles.findIndex((element) => element.id === this.props.screenProps.id), 1);
+            profiles.push(newProfile);
+            await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+        } else {
+            Alert.alert(
+                '',
+                'No available slots for level ' + item.lowestLevel,
+                [
+                    {text: 'Ok', onPress: null, style: 'cancel'},
+                ]
+            );
+        }
+    }
+
+    // Prepare a spell with level, amount and modifier specified in modal dialog
+    async prepareSpell(item, level, amount, modifier) {
+        if (amount === 0) {
+            Alert.alert(
+                '',
+                'No available slots for level ' + level,
+                [
+                    {text: 'Ok', onPress: null, style: 'cancel'},
+                ]
+            );
+            return;
+        }
+        console.log('Requested prepare action for ' + amount + ' ' + item.spell_name + '(s) in a slot of level ' + level + ' width modifier ' + modifier);
+        var newProfile = JSON.parse(JSON.stringify(this.state.profile));
+        var slot = newProfile.slots.find((element) => element.level === level);
+        slot.available -= amount;
+        slot.prepared += amount;
+        var alreadyPrepSpell = newProfile.prepared.find((element) => element.id === item.master_id && element.level === level && element.modifier === modifier);
+        if (alreadyPrepSpell !== undefined) {
+            alreadyPrepSpell.amount += amount;
+        } else {
+            newProfile.prepared.push({id: item.master_id, level: level, amount: amount, modifier: modifier});
+        }
+        this.setState({profile: newProfile});
+        profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
+        profiles.splice(profiles.findIndex((element) => element.id === this.props.screenProps.id), 1);
+        profiles.push(newProfile);
+        await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+        this.setState({prepareSpellModal: {visible: false}});
+    }
+
     renderItem({item, index, section}) {
         return(
             <AvailableSpellListElement
                 record={item}
                 nav={() => this.props.navigation.navigate('SpellDetailInProfile', {record: item})} // Navigate to detail function for child to display
                 deleteItem={() => this.deleteSpell(item)}
+                prepareSimple={() => this.prepareSimple(item)}
+                prepare={() => this.setState({prepareSpellModal: {visible: true, item: item}})}
             />
         );
     }
 
     renderSectionHeader({section: { title }}) {
         return(
-            <SectionListHeader>{title}</SectionListHeader>
+            <AvailableSectionListHeader>{title}</AvailableSectionListHeader>
         );
     }
 
+    // Generate available spell list associating each spell with the lowest castable level according to this profile's classes/domains preferences
     generateSections() {
         let sections = [];
         for (let i = 0; i < 10; i++) {
@@ -124,6 +193,7 @@ class ProfileAvailableTab extends Component {
                 });
             }
             let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
+            stateSpell.lowestLevel = level; // Add in lowest level for this profile
             sections[level].data.push(stateSpell);
         });
         // Prune empty sections
@@ -132,7 +202,7 @@ class ProfileAvailableTab extends Component {
                 sections.splice(i, 1);
             }
         };
-        return sections;
+        this.setState({sections});
     }
 
     renderFooter() {
@@ -148,12 +218,22 @@ class ProfileAvailableTab extends Component {
             <View>
                 <SwipeListView
                     useSectionList
-                    sections={this.generateSections()}
+                    sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}
                     keyExtractor={(spell) => JSON.stringify(spell.master_id)}
                     ListFooterComponent={this.renderFooter()}
                 />
+                <BorderDismissableModal
+                    visible={this.state.prepareSpellModal.visible}
+                    visibilitySetter={(preparingModalVisible) => this.setState({prepareSpellModal: {visible: preparingModalVisible}})}
+                >
+                    <PrepareSpellModal
+                        spell={this.state.prepareSpellModal.item}
+                        slots={this.state.profile !== undefined ? this.state.profile.slots : undefined}
+                        prepare={(item, level, amount, modifier) => this.prepareSpell(item, level, amount, modifier)}
+                    />
+                </BorderDismissableModal>
             </View>
         );
     }

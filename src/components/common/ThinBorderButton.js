@@ -30,7 +30,7 @@ class ThinBorderButton extends Component {
                 underlayColor='#e9e9ef'
                 onPress={this.props.onPress}
             >
-                <Text style={styles.buttonText}>{this.props.children}</Text>
+                <Text style={[styles.buttonText, this.props.textStyle]}>{this.props.children}</Text>
             </TouchableHighlight>
         ); 
     }

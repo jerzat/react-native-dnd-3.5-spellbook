@@ -77,7 +77,7 @@ class ProfileSelection extends Component {
                 onPress={() => this.props.navigation.navigate('ProfileCreation')}
                 disableSwipe
             >
-                <Text style={{color: '#4286f4', fontWeight: '500'}}>Add new profile</Text>
+                <Text style={{color: '#4286f4', fontWeight: '500'}}>{'Add new profile '}</Text>
             </ProfileItem>
         );
     }

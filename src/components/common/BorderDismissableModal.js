@@ -56,8 +56,7 @@ const styles = {
         shadowRadius: 5,
         shadowOpacity: 0.5,
         borderRadius: 10,
-        elevation: 5,
-        minHeight: 50
+        elevation: 5
     }
 }
 

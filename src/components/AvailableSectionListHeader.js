@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 
-const SectionListHeader = (props) => {
+const AvailableSectionListHeader = (props) => {
     return (
         <View style={styles.containerStyle}>
             <Text style={styles.textStyle}>{props.children}</Text>
@@ -23,4 +23,4 @@ const styles = {
     }
 }
 
-export default SectionListHeader
+export default AvailableSectionListHeader

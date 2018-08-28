@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text } from 'react-native';
+import ProfilePreparedList from './ProfilePreparedList';
+import ProfileSpellSlots from './ProfileSpellSlots';
 
 class ProfilePreparedTab extends Component {
 
@@ -22,12 +24,16 @@ class ProfilePreparedTab extends Component {
     }
 
     render() {
-        return (
-            <View>
-                <Text>Ready to cast spells tab</Text>
-                <Text>{this.props.screenProps.name}</Text>
-            </View>
-        );
+        switch (this.props.screenProps.type) {
+            case 'preparedSpellbook':
+                return (<ProfilePreparedList navigation={this.props.navigation} profile={this.props.screenProps} />);
+            case 'preparedList':
+                return (<ProfilePreparedList navigation={this.props.navigation} profile={this.props.screenProps} />);
+            case 'spontaneous':
+                return (<ProfileSpellSlots navigation={this.props.navigation} profile={this.props.screenProps} />);
+            default:
+                return (<View><Text>Error</Text></View>);
+        }
     }
 }
 

@@ -19,7 +19,19 @@ class ProfileCreation extends Component {
             type: '',
             lists: {classes: [], domains: []},
             available: [],
-            prepared: []
+            prepared: [],
+            slots: [
+                { level: 0, available: 0, prepared: 0, exhausted: 0 },
+                { level: 1, available: 0, prepared: 0, exhausted: 0 },
+                { level: 2, available: 0, prepared: 0, exhausted: 0 },
+                { level: 3, available: 0, prepared: 0, exhausted: 0 },
+                { level: 4, available: 0, prepared: 0, exhausted: 0 },
+                { level: 5, available: 0, prepared: 0, exhausted: 0 },
+                { level: 6, available: 0, prepared: 0, exhausted: 0 },
+                { level: 7, available: 0, prepared: 0, exhausted: 0 },
+                { level: 8, available: 0, prepared: 0, exhausted: 0 },
+                { level: 9, available: 0, prepared: 0, exhausted: 0 },
+            ]
         },
         classes: {
             type: 'classes',
