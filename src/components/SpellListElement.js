@@ -4,6 +4,9 @@ import { View, Text, TouchableHighlight } from 'react-native';
 const SpellListElement = (props) => {
 
     renderRightChunk = () => {
+        if (props.spontaneous) {
+            return;
+        }
         if (props.amount !== undefined) { // Prepared spell list shows amount instead of class/domain info
             return(
                 <Text style={styles.amountStyle}>{'×' + props.amount}</Text>

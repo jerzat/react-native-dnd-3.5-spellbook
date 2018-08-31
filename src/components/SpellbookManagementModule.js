@@ -3,6 +3,7 @@ import { Image } from 'react-native';
 import { createStackNavigator } from 'react-navigation';
 import ProfileSelection from './ProfileSelection';
 import ProfileNavigator from './ProfileNavigator';
+import SpontaneousCasterList from './SpontaneousCasterList';
 import SpellDetail from './SpellDetail';
 import ProfileCreation from './ProfileCreation';
 

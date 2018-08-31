@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import { AppRegistry, YellowBox, AsyncStorage, Text } from 'react-native';
+import { AppRegistry, YellowBox, AsyncStorage, View } from 'react-native';
 import TopLevelNavigator from './src/components/TopLevelNavigator';
 import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import reducers from './src/reducers';
+import FlashMessage from "react-native-flash-message";
 
 YellowBox.ignoreWarnings(['Warning: isMounted(...) is deprecated', 'Module RCTImageLoader']); // Until 0.56 is stable ...
 YellowBox.ignoreWarnings(['Class RCTCxxModule']); // Until 0.56 is stable on iOS ...
@@ -59,12 +60,12 @@ class App extends Component {
                             available: [{ id: 343 }, { id: 7 }, { id: 89 }, { id: 120 }, { id: 50 }, { id: 500 }, { id: 1867 }, { id: 1693 }, { id: 2100 }],
                             prepared: [],
                             slots: [
-                                { level: 0, available: 0, prepared: 0, exhausted: 0 },
-                                { level: 1, available: 0, prepared: 0, exhausted: 0 },
-                                { level: 2, available: 0, prepared: 0, exhausted: 0 },
-                                { level: 3, available: 0, prepared: 0, exhausted: 0 },
-                                { level: 4, available: 0, prepared: 0, exhausted: 0 },
-                                { level: 5, available: 0, prepared: 0, exhausted: 0 },
+                                { level: 0, available: 6, prepared: 0, exhausted: 0 },
+                                { level: 1, available: 6, prepared: 0, exhausted: 0 },
+                                { level: 2, available: 5, prepared: 0, exhausted: 0 },
+                                { level: 3, available: 4, prepared: 0, exhausted: 0 },
+                                { level: 4, available: 3, prepared: 0, exhausted: 0 },
+                                { level: 5, available: 1, prepared: 0, exhausted: 0 },
                                 { level: 6, available: 0, prepared: 0, exhausted: 0 },
                                 { level: 7, available: 0, prepared: 0, exhausted: 0 },
                                 { level: 8, available: 0, prepared: 0, exhausted: 0 },
@@ -106,7 +107,10 @@ class App extends Component {
     render() {
         return (
             <Provider store={createStore(reducers)}>
-                <TopLevelNavigator />
+                <View style={{flex: 1}}>
+                    <TopLevelNavigator />
+                    <FlashMessage position='top' />
+                </View>
             </Provider>
         );
     }

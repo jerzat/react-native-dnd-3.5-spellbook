@@ -1,22 +1,11 @@
 import React, { Component } from 'react';
-import { View, Text, TouchableHighlight, Image } from 'react-native';
+import { View, Text, Image, TouchableHighlight } from 'react-native';
 import UIStepper from 'react-native-ui-stepper';
-import { showMessage } from "react-native-flash-message";
 
-class PreparedSectionListHeader extends Component {
+class SpellSlotElement extends Component {
 
     state = {
         editSlots: false
-    }
-
-    minimumReachedWarning() {
-        showMessage({
-            message: 'Spells prepared in this slot, clear or cast them before decreasing further.',
-            type: 'danger',
-            duration: 3000,
-            floating: true,
-            icon: 'danger'
-        });
     }
 
     renderSlots() {
@@ -28,29 +17,28 @@ class PreparedSectionListHeader extends Component {
                         style={styles.stepperStyle}
                         width={80}
                         height={25}
-                        initialValue={this.props.slots.available + this.props.slots.prepared + this.props.slots.exhausted}
-                        minimumValue={this.props.slots.prepared} // Do not unprepare spells by decreasing slots. Should we wish code is already in place, though
+                        initialValue={this.props.slots.available + this.props.slots.exhausted}
+                        minimumValue={0}
                         maximumValue={100}
                         steps={1}
                         tintColor='#4286f4'
                         onValueChange={(value) => this.props.changeSlots(value)}
                         displayValue={true}
                         textColor={'#000'}
-                        onMinimumReached={() => this.props.slots.prepared > 0 ? this.minimumReachedWarning() : null}
                     />
                 </View>
             );
         } else {
             return(
                 <View>
-                    <Text style={styles.slotsStyle}>{'Slots: ' + (this.props.slots.available + this.props.slots.prepared + this.props.slots.exhausted)}</Text>
+                    <Text style={styles.slotsStyle}>{'Slots: ' + (this.props.slots.available + this.props.slots.exhausted)}</Text>
                 </View>
             );
         }
     }
 
     render() {
-        return (
+        return(
             <View style={styles.containerStyle}>
                 <View style={styles.leftChunk}>
                     <Text style={styles.levelStyle}>{'Level ' + this.props.slots.level}</Text>
@@ -65,7 +53,6 @@ class PreparedSectionListHeader extends Component {
                 </View>
                 <View style={styles.rightChunk}>
                     <Text style={styles.availableStyle}>{'Available: ' + this.props.slots.available}</Text>
-                    <Text style={styles.preparedStyle}>{'Prepared: ' + this.props.slots.prepared}</Text>
                     <Text style={styles.exhaustedStyle}>{'Exhausted: ' + this.props.slots.exhausted}</Text>
                 </View>
             </View>
@@ -141,4 +128,4 @@ const styles = {
     }
 }
 
-export default PreparedSectionListHeader
+export default SpellSlotElement;

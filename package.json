@@ -12,6 +12,7 @@
     "pretty-format": "^23.2.0",
     "react": "16.3.1",
     "react-native": "^0.56.0",
+    "react-native-flash-message": "^0.1.9",
     "react-native-loading-spinner-overlay": "^0.5.2",
     "react-native-modal-selector": "0.0.27",
     "react-native-popover-view": "^1.0.1",

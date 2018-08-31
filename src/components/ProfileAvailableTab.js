@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, LayoutAnimation, Alert } from 'react-native';
+import { View, AsyncStorage, LayoutAnimation, Alert, Text } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import AvailableSpellListElement from './AvailableSpellListElement';
 import QueryHelper from './QueryHelper';
@@ -8,6 +8,7 @@ import AvailableSectionListHeader from './AvailableSectionListHeader';
 import AvailableSpellListFooter from './AvailableSpellListFooter';
 import { BorderDismissableModal } from './common';
 import PrepareSpellModal from './PrepareSpellModal';
+import { showMessage } from "react-native-flash-message";
 
 class ProfileAvailableTab extends Component {
 
@@ -82,6 +83,7 @@ class ProfileAvailableTab extends Component {
         LayoutAnimation.spring();
         this.setState({ spells });
         await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+        this.generateSections();
     }
 
     // Prepare spell once if a slot is available at the same level
@@ -94,7 +96,6 @@ class ProfileAvailableTab extends Component {
             alreadyPrepSpell = newProfile.prepared.find((element) => element.id === item.master_id && element.level === item.lowestLevel && element.modifier === '');
             if (alreadyPrepSpell !== undefined) {
                 alreadyPrepSpell.amount++;
-                console.log('Spell is already prepared, adding one');
             } else {
                 newProfile.prepared.push({id: item.master_id, level: item.lowestLevel, amount: 1, modifier: ''});
             }
@@ -103,14 +104,21 @@ class ProfileAvailableTab extends Component {
             profiles.splice(profiles.findIndex((element) => element.id === this.props.screenProps.id), 1);
             profiles.push(newProfile);
             await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+            showMessage({
+                message: 'Prepared ' + item.spell_name + ', ' + slot.available + ' slots remaining.',
+                type: 'success',
+                duration: 3000,
+                floating: true,
+                icon: 'success'
+            });
         } else {
-            Alert.alert(
-                '',
-                'No available slots for level ' + item.lowestLevel,
-                [
-                    {text: 'Ok', onPress: null, style: 'cancel'},
-                ]
-            );
+            showMessage({
+                message: 'Can not prepare ' + item.spell_name + ', no level ' + slot.level + ' slots remaining.',
+                type: 'danger',
+                duration: 3000,
+                floating: true,
+                icon: 'danger'
+            });
         }
     }
 
@@ -143,6 +151,13 @@ class ProfileAvailableTab extends Component {
         profiles.push(newProfile);
         await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
         this.setState({prepareSpellModal: {visible: false}});
+        showMessage({
+            message: 'Prepared ' + amount + ' ' + modifier + ' ' + item.spell_name + '(s) in level ' + level + ' slot(s), ' + slot.available + ' slots remaining.',
+            type: 'success',
+            duration: 3000,
+            floating: true,
+            icon: 'success'
+        });
     }
 
     renderItem({item, index, section}) {
