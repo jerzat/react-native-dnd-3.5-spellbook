@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, LayoutAnimation, Alert, Text } from 'react-native';
+import { View, AsyncStorage, LayoutAnimation, Alert } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
+import Spinner from 'react-native-loading-spinner-overlay';
 import AvailableSpellListElement from './AvailableSpellListElement';
 import QueryHelper from './QueryHelper';
 import { connect } from 'react-redux';
@@ -16,7 +17,9 @@ class ProfileAvailableTab extends Component {
         spells: [],
         profile: undefined,
         sections: [], // Store processed sections here for list
-        prepareSpellModal: {visible: false, item: undefined}
+        prepareSpellModal: {visible: false, item: undefined},
+        listSpells: [], // Spells from profile list preferences
+        spinnerVisible: false
     }
 
     static navigationOptions = ({ screenProps }) => { // Set up tab label
@@ -38,52 +41,88 @@ class ProfileAvailableTab extends Component {
     }
 
     componentDidMount() {
-        this.subs = [this.props.navigation.addListener('didFocus', () => this.getSpells()),]; // subscribe to navigation event "didFocus", and trigger a spell reload
-        this.getSpells();
+        this.subs = [this.props.navigation.addListener('didFocus', () => this.updateList()),]; // subscribe to navigation event "didFocus", and trigger a spell reload
+        this.setState({ spinnerVisible: true });
+        this.updateList();
     }
 
     componentWillUnmount() {
         this.subs.forEach(sub => sub.remove());
     }
 
-    // Query spells from database
-    async getSpells() {
-        let spells = this.state.spells.splice();
-        
-        let profiles = []
-        try {
-            profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
-        } catch (error) {
-            console.log(error);
+    async componentWillReceiveProps(nextProps) {
+        // Respond to request to show list spells from navigator header button
+        if (nextProps.screenProps.showListSpells !== this.props.screenProps.showListSpells) {
+            LayoutAnimation.spring();
+            await this.queryListSpells(nextProps.screenProps.showListSpells);
+            await this.updateList();
         }
+    }
+
+    async queryListSpells(doQuery) {
+        this.setState({ spinnerVisible: true });
+        var listSpells = []
+        if (doQuery && this.state.profile !== undefined && (this.state.profile.lists.classes.length > 0 || this.state.profile.lists.domains.length > 0)) {
+            classes = this.state.profile.lists.classes.length > 0 ? this.state.profile.lists.classes : [];
+            domains = this.state.profile.lists.domains.length > 0 ? this.state.profile.lists.domains : [];
+            listSpells = await QueryHelper.searchQuery({db: this.props.db, spellLevel: {selected: []}, classes: {selected: classes}, domains: {selected: domains}, schools: {selected: []}, descriptors: {selected: []}, savingThrow: {selected: []}, spellResistance: {selected: []}, spellName: '', spellText: ''});
+        }
+        this.setState({ listSpells });
+    }
+
+    async updateList() {
+        // Always update profile
+        var oldProfile = this.state.profile;
+        let profiles = []
+        profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
         profile = profiles.find((element) => element.id === this.props.screenProps.id);
-        
-        await Promise.all(
-            profile.available.map(async (spell) => {
-                await QueryHelper.getSpellById(this.props.db, spell.id)
-                    .then((newSpell) => {
-                    spells.push(newSpell);
-                    });
-            })
-        );
-        this.setState({ spells, profile });
+        this.setState({ profile });
+
+        // Query spells from DB if first load or if contents have changed
+        if (oldProfile === undefined || !(profile.available.length === oldProfile.available.length && profile.available.sort().every(function(value, index) { return value === oldProfile.available.sort()[index]}))) {
+            var spells = [];
+            // Query user added spells
+            await Promise.all(
+                profile.available.map(async (spell) => {
+                    await QueryHelper.getSpellById(this.props.db, spell.id)
+                        .then((newSpell) => {
+                            spells.push(newSpell);
+                        });
+                })
+            );
+            this.setState({ spells });
+        }
+
         this.generateSections();
     }
 
     async deleteSpell(item) {
-        let spells = this.state.spells.slice();
-        spells.splice(spells.findIndex((element) => element.master_id === item.master_id), 1);
-        let profiles = []
-        try {
-            profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
-        } catch (error) {
-            console.log(error);
+        let alertText = 'Remove ' + item.spell_name + ' from known spells?';
+        Alert.alert(
+            '',
+            alertText,
+            [
+                {text: 'Keep', onPress: null, style: 'cancel'},
+                {text: 'Remove', onPress: async () =>  await performDelete(item)}
+            ],
+            { cancelable: false }
+        );
+
+        const performDelete = async (item)  => {
+            let spells = this.state.spells.slice();
+            spells.splice(spells.findIndex((element) => element.master_id === item.master_id), 1);
+            let profiles = []
+            try {
+                profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
+            } catch (error) {
+                console.log(error);
+            }
+            (profiles.find((element) => element.id === this.props.screenProps.id)).available.splice(profile.available.findIndex((element) => element.id === item.master_id), 1); // Remove spell from current profile
+            LayoutAnimation.spring();
+            this.setState({ spells });
+            await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+            this.generateSections();
         }
-        (profiles.find((element) => element.id === this.props.screenProps.id)).available.splice(profile.available.findIndex((element) => element.id === item.master_id), 1); // Remove spell from current profile
-        LayoutAnimation.spring();
-        this.setState({ spells });
-        await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
-        this.generateSections();
     }
 
     // Prepare spell once if a slot is available at the same level
@@ -160,6 +199,26 @@ class ProfileAvailableTab extends Component {
         });
     }
 
+    async toggleFavorite(item) {
+        profile = JSON.parse(JSON.stringify(this.state.profile));
+        slotItem = profile.available.find((element) => element.id === item.master_id);
+        slotItem.favorite = !slotItem.favorite;
+        this.setState({ profile });
+        profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
+        profiles.splice(profiles.findIndex((element) => element.id === this.props.screenProps.id), 1);
+        profiles.push(profile);
+        await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
+
+        // Fast feedback, or we have to wait for getSpells
+        /*
+        sections = this.state.sections.slice();
+        sections[item.lowestLevel].data.find((element) => element.master_id === item.master_id).favorite = slotItem.favorite;
+        this.setState({ sections })
+        */
+
+        this.updateList();
+    }
+
     renderItem({item, index, section}) {
         return(
             <AvailableSpellListElement
@@ -168,6 +227,7 @@ class ProfileAvailableTab extends Component {
                 deleteItem={() => this.deleteSpell(item)}
                 prepareSimple={() => this.prepareSimple(item)}
                 prepare={() => this.setState({prepareSpellModal: {visible: true, item: item}})}
+                toggleFavorite={() => this.toggleFavorite(item)}
             />
         );
     }
@@ -184,40 +244,64 @@ class ProfileAvailableTab extends Component {
         for (let i = 0; i < 10; i++) {
             sections.push({title: 'Level ' + i, data:[]})
         }
-        this.state.spells.forEach((stateSpell) => {
-            let lowestClassDomainLevelMatch = 100; // Store lowest match from profile lists prefs here
-            let lowestClassDomainLevelForSpell = 100; // Store fallback lowest for spell here
-            if (stateSpell.class !== undefined && stateSpell.class.length > 0) { // First sort through classes
-                stateSpell.class.forEach((stateSpellClass) => {
-                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellClass.level);
-                    this.state.profile.lists.classes.forEach((profileClass) => {
-                        if (stateSpellClass.id === profileClass.id) {
-                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellClass.level);
-                        }
+
+        const setLowestLevel = (spells) => {
+            retSpells = [];
+            spells.forEach((stateSpell) => {
+                let lowestClassDomainLevelMatch = 100; // Store lowest match from profile lists prefs here
+                let lowestClassDomainLevelForSpell = 100; // Store fallback lowest for spell here
+                if (stateSpell.class !== undefined && stateSpell.class.length > 0) { // First sort through classes
+                    stateSpell.class.forEach((stateSpellClass) => {
+                        lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellClass.level);
+                        this.state.profile.lists.classes.forEach((profileClass) => {
+                            if (stateSpellClass.id === profileClass.id) {
+                                lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellClass.level);
+                            }
+                        });
                     });
-                });
-            }
-            if (stateSpell.domain !== undefined && stateSpell.domain.length > 0) { // Then domains
-                stateSpell.domain.forEach((stateSpellDomain) => {
-                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellDomain.level);
-                    this.state.profile.lists.domains.forEach((profileDomain) => {
-                        if (stateSpellDomain.id === profileDomain.id) {
-                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellDomain.level);
-                        }
+                }
+                if (stateSpell.domain !== undefined && stateSpell.domain.length > 0) { // Then domains
+                    stateSpell.domain.forEach((stateSpellDomain) => {
+                        lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellDomain.level);
+                        this.state.profile.lists.domains.forEach((profileDomain) => {
+                            if (stateSpellDomain.id === profileDomain.id) {
+                                lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellDomain.level);
+                            }
+                        });
                     });
-                });
-            }
-            let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
-            stateSpell.lowestLevel = level; // Add in lowest level for this profile
-            sections[level].data.push(stateSpell);
+                }
+                let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
+                stateSpell.lowestLevel = level; // Add in lowest level for this profile
+                retSpells.push(stateSpell);
+            });
+            return retSpells;
+        }
+
+        userSpells = setLowestLevel(this.state.spells.slice());
+        userSpells.forEach((userSpell) => {
+            userSpell.favorite = this.state.profile.available.find((element) => element.id === userSpell.master_id).favorite;
+            sections[userSpell.lowestLevel].data.push(userSpell)
         });
+
+        if (this.props.screenProps.showListSpells) { // Only process and add list spells if flag enabled
+            listSpells = setLowestLevel(this.state.listSpells.slice());
+            listSpells.forEach((listSpell) => {
+                duplicate = userSpells.find((element) => element.master_id === listSpell.master_id); // Don't list duplicates of already added spells
+                if (duplicate === undefined) {
+                    listSpell.listSpell = true; // Flag as listSpell
+                    sections[listSpell.lowestLevel].data.push(listSpell);
+                }
+            });
+        }
+
         // Prune empty sections
         for (let i = 0; i < sections.length; i++) {
             while (i < sections.length && sections[i].data.length === 0) {
                 sections.splice(i, 1);
             }
         };
-        this.setState({sections});
+
+        this.setState({ sections, spinnerVisible: false });
     }
 
     renderFooter() {
@@ -233,6 +317,7 @@ class ProfileAvailableTab extends Component {
             <View>
                 <SwipeListView
                     useSectionList
+                    stickySectionHeadersEnabled
                     sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}
@@ -249,6 +334,9 @@ class ProfileAvailableTab extends Component {
                         prepare={(item, level, amount, modifier) => this.prepareSpell(item, level, amount, modifier)}
                     />
                 </BorderDismissableModal>
+                <View style={{ flex: 1 }}>
+                    <Spinner visible={this.state.spinnerVisible} textContent={"Retrieving Spells..."} textStyle={{color: '#FFF'}} overlayColor={'rgba(0,0,0,0.5)'} />
+                </View>
             </View>
         );
     }

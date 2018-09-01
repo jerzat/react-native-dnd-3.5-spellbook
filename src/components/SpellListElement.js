@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableHighlight } from 'react-native';
+import { View, Text, TouchableHighlight, Image } from 'react-native';
 
 const SpellListElement = (props) => {
 
     renderRightChunk = () => {
-        if (props.spontaneous) {
-            return;
+        if (props.spontaneous || props.prepared) {
+            return(
+                <Text style={styles.spellSchoolStyle}>
+                    {props.record.school_name}
+                </Text>
+            );
         }
         if (props.amount !== undefined) { // Prepared spell list shows amount instead of class/domain info
             return(
@@ -30,6 +34,16 @@ const SpellListElement = (props) => {
 
     return (
         <View style={[styles.containerStyle, props.style]}>
+            {props.listSpell ?
+                <View style={{position: 'absolute', top: 0, right: 0}}>
+                    <Image style={styles.cornerStyle} source={require('../img/corner.png')} resizeMode='contain' />
+                </View>
+            : null}
+            {props.favorite ?
+                <View style={{position: 'absolute', top: 0, right: 0}}>
+                    <Image style={styles.favoriteStyle} source={require('../img/favorite.png')} resizeMode='contain' />
+                </View>
+            : null}
             <TouchableHighlight
                 style={styles.touchableStyle}
                 onPress={props.nav}
@@ -60,6 +74,17 @@ const styles = {
         borderBottomWidth: 1,
         borderColor: '#777',
         backgroundColor: '#e9e9ef'
+    },
+    cornerStyle: {
+        height: 20,
+        width: 20,
+        tintColor: '#090'
+    },
+    favoriteStyle: {
+        height: 20,
+        width: 20,
+        marginTop: 2,
+        marginRight: 2
     },
     innerContainerStyle: {
         flex: 1,

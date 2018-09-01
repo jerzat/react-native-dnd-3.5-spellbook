@@ -48,7 +48,10 @@ class SearchItemModalPicker extends React.Component {
                 >
                     <ScrollView>
                         <View style={styles.selectableItemsContainer}>
-                            {this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))}
+                            {this.props.selectionInfo.selectable.length === 0 ?
+                                <Text>Database busy, please wait...</Text> :
+                                this.props.selectionInfo.selectable.map(item => this.generateSelectable(item))
+                            }
                         </View>
                     </ScrollView>
 

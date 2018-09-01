@@ -11,11 +11,11 @@ class AvailableSpellListElement extends Component {
                 closeOnRowPress
                 closeOnRowBeginSwipe
                 style={styles.swipeRowStyle}
-                rightOpenValue={-50}
+                rightOpenValue={-100}
                 stopRightSwipe={-Dimensions.get('window').width*0.5}
                 leftOpenValue={100}
                 stopLeftSwipe={Dimensions.get('window').width*0.5}
-                disableLeftSwipe={this.props.disableSwipe}
+                disableLeftSwipe={this.props.disableSwipe || this.props.record.listSpell}
                 disableRightSwipe={this.props.disableSwipe}
                 closeOnScroll={false}
             >
@@ -44,12 +44,22 @@ class AvailableSpellListElement extends Component {
                                 <Image style={styles.deleteIconStyle} source={require('../img/delete.png')} />
                             </View>
                         </TouchableHighlight>
+                        <TouchableHighlight
+                            onPress={this.props.toggleFavorite}
+                        >
+                            <View style={[styles.imageContainer, styles.yellow]}>
+                                <Image style={styles.favoreiteIconStyle} source={require('../img/favorite.png')} />
+                            </View>
+                        </TouchableHighlight>
                     </View>
                 </View>
                 <SpellListElement
                     style={styles.spellListElementStyle}
                     record={this.props.record}
                     nav={this.props.nav}
+                    prepared
+                    listSpell={this.props.record.listSpell ? true : false}
+                    favorite={this.props.record.favorite ? true : false}
                 />
             </SwipeRow>
         )
@@ -93,6 +103,9 @@ const styles = {
     green: {
         backgroundColor: '#0c0'
     },
+    yellow: {
+        backgroundColor: '#ffd800'
+    },
     prepareIconStyle: {
         height: 24,
         width: 25,
@@ -107,6 +120,10 @@ const styles = {
         height: 30,
         width: 30,
         tintColor: '#fff'
+    },
+    favoreiteIconStyle: {
+        height: 30,
+        width: 30
     },
     spellListElementStyle: {
         flex: 1

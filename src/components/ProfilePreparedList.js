@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, LayoutAnimation, Alert } from 'react-native';
+import { View, AsyncStorage, LayoutAnimation, Alert, Image, Dimensions } from 'react-native';
 import QueryHelper from './QueryHelper';
 import { connect } from 'react-redux';
 import { SwipeListView } from 'react-native-swipe-list-view';
@@ -12,7 +12,8 @@ class ProfilePreparedList extends Component {
     state = {
         profile: undefined,
         spells: [],
-        sections: []
+        sections: [],
+        castingImage: false
     }
 
     componentDidMount() {
@@ -102,6 +103,13 @@ class ProfilePreparedList extends Component {
         newProfiles.push(this.state.profile);
         newProfiles.sort((a, b) => a.id - b.id);
         await AsyncStorage.setItem('profiles', JSON.stringify(newProfiles));
+
+        // Play animation
+        if (this.state.profile.fancyMode) {
+            this.setState({castingImage: true});
+            setTimeout(() => this.setState({castingImage: false}), 1500);
+        }
+
         await this.getSpells();
     }
 
@@ -210,12 +218,18 @@ class ProfilePreparedList extends Component {
             <View>
                 <SwipeListView
                     useSectionList
+                    stickySectionHeadersEnabled
                     sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}
                     keyExtractor={(spell) => JSON.stringify(spell.master_id) + spell.spell_name}
                     ListFooterComponent={this.renderRestoreButtons()}
                 />
+                {this.state.castingImage ?
+                <View style={{flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
+                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='center' />
+                </View>
+                : null}
             </View>
         );
     }

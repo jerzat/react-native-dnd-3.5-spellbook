@@ -5,6 +5,7 @@ import { SwipeRow } from 'react-native-swipe-list-view';
 
 // Wrapper for SpellListElement that renders a SwipeRow with options
 class SpontaneousSpellListElement extends Component {
+
     render() {
         return(
             <SwipeRow
@@ -12,17 +13,19 @@ class SpontaneousSpellListElement extends Component {
                 closeOnRowBeginSwipe
                 style={styles.swipeRowStyle}
                 disableRightSwipe
-                rightOpenValue={-100}
+                rightOpenValue={this.props.record.listSpell ? -50 : -100} // Do not display delete icon if this spell was not added by user
                 disableLeftSwipe={this.props.disableSwipe}
             >
                 <View style={styles.hiddenContainer}>
-                    <TouchableHighlight
-                        onPress={this.props.restoreSingleSpell}
-                    >
-                        <View style={[styles.imageContainer, styles.red]}>
-                            <Image style={styles.castIconStyle} source={require('../img/delete.png')} />
-                        </View>
-                    </TouchableHighlight>
+                    {this.props.record.listSpell ? null :  // Do not display delete icon if this spell was not added by user
+                        <TouchableHighlight
+                            onPress={this.props.restoreSingleSpell}
+                        >
+                            <View style={[styles.imageContainer, styles.red]}>
+                                <Image style={styles.castIconStyle} source={require('../img/delete.png')} />
+                            </View>
+                        </TouchableHighlight>
+                    }
                     <TouchableHighlight
                         onPress={this.props.castSpell}
                     >
@@ -37,6 +40,7 @@ class SpontaneousSpellListElement extends Component {
                     nav={this.props.nav}
                     amount={this.props.amount}
                     spontaneous
+                    listSpell={this.props.record.listSpell ? true : false}
                 />
             </SwipeRow>
         )

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Dimensions, TextInput, Button, Text, Alert, AsyncStorage } from 'react-native';
+import { View, ScrollView, Dimensions, TextInput, Button, Text, Alert, AsyncStorage, Switch } from 'react-native';
 import SCTypeSelector from './SCTypeSelector';
 import { StackActions, NavigationActions } from 'react-navigation';
 import { connect } from 'react-redux';
@@ -31,7 +31,8 @@ class ProfileCreation extends Component {
                 { level: 7, available: 0, prepared: 0, exhausted: 0 },
                 { level: 8, available: 0, prepared: 0, exhausted: 0 },
                 { level: 9, available: 0, prepared: 0, exhausted: 0 },
-            ]
+            ],
+            fancyMode: false, // Fancy mode
         },
         classes: {
             type: 'classes',
@@ -50,11 +51,14 @@ class ProfileCreation extends Component {
         super(props);
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.initializeSelectables();
         if (this.props.navigation.state.params !== undefined) {
             this.state.editing = true;
-            this.populateEditing(this.props.navigation.state.params);
+            // Retrieve profile from storage: navigation state might contain old data
+            let profiles = JSON.parse(await AsyncStorage.getItem('profiles'));
+            let profile = profiles.find((element) => element.id === this.props.navigation.state.params.id);
+            this.populateEditing(profile);
         }
     }
 
@@ -127,12 +131,14 @@ class ProfileCreation extends Component {
     render() {
         const window = Dimensions.get('window');
         return(
-            <View style={styles.containerStyle}>
+            <ScrollView contentContainerStyle={styles.containerStyle}>
                 <View>
                     <Text style={styles.textStyle}>Enter a profile name and select a spellcaster type.</Text>
                     <Text style={styles.textStyle}>Prepared spellcasters from spellbook have a learned spells list and a prepared spells list, such as wizards.</Text>
                     <Text style={styles.textStyle}>Prepared spellcasters from list know all spells available to them and have a prepared spells list, such as clerics.</Text>
                     <Text style={styles.textStyle}>Spontaneous spellcasters have a known spells list and an available slots list.</Text>
+                    <Text style={styles.textStyle}>This determines the level that a spell is listed at in a profile (with the lowest being used if a profile has no or multiple classes with the spell on their list).</Text>
+                    <Text style={styles.textStyle}>This also determines which spells will be shown by selecting the "add class/domain list spells".</Text>
                 </View>
                 <View style={styles.innerContainerStyle}>
                     <TextInput
@@ -166,12 +172,19 @@ class ProfileCreation extends Component {
                     selectionInfo={this.state.domains}
                     modalStyles={{width: window.width * 0.7, maxHeight: window.height * 0.5}}
                 />
+                <View style={styles.fancyModeContainer}>
+                    <Text style={{marginRight: 5, fontSize: 17}}>🌈 Mode</Text>
+                    <Switch
+                        value={this.state.newProfile.fancyMode} style={{tintColor: '#aaa'}}
+                        onValueChange={(value) => this.setState(({newProfile}) => ({newProfile: {...newProfile, fancyMode: value}}))}
+                    />
+                </View>
                 <Button
                     style={{alignSelf: 'flex-end'}}
                     title={this.state.editing ? 'Save Profile' : 'Create Profile'}
                     onPress={this.saveProfile.bind(this)}>
                 </Button>
-            </View>
+            </ScrollView>
         );
     }
 
@@ -203,6 +216,13 @@ const styles = {
         height: 36,
         borderWidth: 0,
         margin: 5
+    },
+    fancyModeContainer:{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 10,
+        marginBottom: 10
     }
 }
 

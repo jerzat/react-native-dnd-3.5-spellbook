@@ -5,6 +5,7 @@ class ButtonEditProfile extends Component {
     render() {
         return(
             <TouchableHighlight
+                style={styles.touchableStyle}
                 onPress={this.props.onPress}
             >
                 <Image style={styles.imageStyle} source={require('../img/edit.png')} resizeMode='contain' />
@@ -14,10 +15,12 @@ class ButtonEditProfile extends Component {
 }
 
 const styles = {
+    touchableStyle: {
+        padding: 8
+    },
     imageStyle: {
         height: 18,
         width: 18,
-        marginRight: 10,
         tintColor: '#4286f4'
     }
 }

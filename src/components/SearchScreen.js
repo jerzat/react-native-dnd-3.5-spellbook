@@ -215,7 +215,7 @@ class SearchScreen extends React.Component {
                 </ThinBorderButton>
 
                 <View style={{ flex: 1 }}>
-                  <Spinner visible={this.state.spinnerVisible} textContent={"Consulting manuals..."} textStyle={{color: '#FFF'}} />
+                    <Spinner visible={this.state.spinnerVisible} textContent={"Consulting manuals..."} textStyle={{color: '#FFF'}} overlayColor={'rgba(0,0,0,0.5)'} />
                 </View>
             </ScrollView>
         );

@@ -57,9 +57,10 @@ class PreparedSectionListHeader extends Component {
                 </View>
                 <View style={styles.middleChunk}>
                     <TouchableHighlight
+                        style={styles.touchableStyle}
                         onPress={() => this.setState({editSlots: !this.state.editSlots})}
                     >
-                        <Image style={styles.iconStyle} source={require('../img/edit.png')} resizeMode='contain' />
+                        <Image style={styles.iconStyle} source={this.state.editSlots ? require('../img/checkmark.png') : require('../img/edit.png')} resizeMode='contain' />
                     </TouchableHighlight>
                     {this.renderSlots()}
                 </View>
@@ -105,11 +106,13 @@ const styles = {
         fontWeight: '500',
         width: 70
     },
+    touchableStyle: {
+        padding: 7
+    },
     iconStyle: {
         width: 12,
         height: 12,
-        tintColor: '#4286f4',
-        marginRight: 5
+        tintColor: '#4286f4'
     },
     stepperContainerStyle: {
         flexDirection: 'row',

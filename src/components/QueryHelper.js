@@ -97,74 +97,80 @@ class QueryHelper {
 
     static async searchQuery(state) {
 
-        
-        
         // Query
         let conditionsCount = 0;
         var addLigature = () => { // Add where/and clause where appropriate
             conditionsCount++;
             if (conditionsCount === 1) {
-               return ' WHERE (';
+                return ' WHERE (';
             } else {
-               return ' AND (';
+                return ' AND (';
             }
         };
-        let levels = state.spellLevel.selected;
         let levelQueryString = '';
+        let classQueryString = '';
+        let domainQueryString = '';
+        let schoolQueryString = '';
+        let descriptorQueryString = '';
+        let spellSTQueryString = '';
+        let spellSRQueryString = '';
+        let spellNameQueryString = '';
+        let spellTextQueryString = '';
+        let levels = state.spellLevel.selected;
         if (levels.length !== 0) {
             levelQueryString += addLigature();
             levels.map(level => levelQueryString += ' dnd_spellclasslevel.level=' + level.id + ' OR dnd_spelldomainlevel.level=' + level.id + ' OR');
             levelQueryString = levelQueryString.substr(0, levelQueryString.length - 3) + ')';
         }
         let classes = state.classes.selected;
-        classQueryString = '';
         if (classes.length !== 0) {
             classQueryString += addLigature();
+            classQueryString += '(';
             classes.map(sclass => classQueryString += ' dnd_spellclasslevel.character_class_id=' + sclass.id +  ' OR');
             classQueryString = classQueryString.substr(0, classQueryString.length - 3) + ')';
         }
         let domains = state.domains.selected;
-        domainQueryString = '';
         if (domains.length !== 0) {
-            domainQueryString += addLigature();
+            if (classQueryString === '') {
+                domainQueryString += addLigature();
+            } else {
+                domainQueryString += ' OR (';
+            }
             domains.map(dom => domainQueryString += ' dnd_spelldomainlevel.domain_id=' + dom.id + ' OR');
             domainQueryString = domainQueryString.substr(0, domainQueryString.length - 3) + ')';
         }
+        if (classQueryString != '') {
+            domainQueryString += ')';
+        }
         let schools = state.schools.selected;
-        schoolQueryString = '';
         if (schools.length !== 0) {
             schoolQueryString += addLigature();
             schools.map(school => schoolQueryString += ' dnd_spell.school_id=' + school.id + ' OR');
             schoolQueryString = schoolQueryString.substr(0, schoolQueryString.length - 3) + ')';
         }
         let descriptors = state.descriptors.selected;
-        descriptorQueryString = '';
         if (descriptors.length !== 0) {
             descriptorQueryString += addLigature();
             descriptors.map(descriptor => descriptorQueryString += ' dnd_spell_descriptors.spelldescriptor_id=' + descriptor.id + ' OR');
             descriptorQueryString = descriptorQueryString.substr(0, descriptorQueryString.length - 3) + ')';
         }
         let savingThrow = state.savingThrow.selected;
-        let spellSTQueryString = '';
         if (savingThrow.length !== 0) {
             spellSTQueryString += addLigature();
             savingThrow.map((st) => spellSTQueryString += ' saving_throw LIKE \'%' + st.name + '%\' OR');
             spellSTQueryString = spellSTQueryString.substr(0, spellSTQueryString.length - 3) + ')';
         }
         let spellResistance = state.spellResistance.selected;
-        let spellSRQueryString = '';
         if (spellResistance.length !== 0) {
             spellSRQueryString += addLigature();
             spellResistance.map((sr) => spellSRQueryString += ' spell_resistance LIKE \'%' + sr.name + '%\' OR');
             spellSRQueryString = spellSRQueryString.substr(0, spellSRQueryString.length - 3) + ')';
         }
         let spellName = state.spellName;
-        let spellNameQueryString = '';
         if (spellName !== '') {
             spellNameQueryString += addLigature() + ' dnd_spell.name LIKE \'%' + spellName + '%\')';
         }
         let spellText = state.spellText;
-        let spellTextQueryString = '';
         if (spellText !== '') {
             spellTextQueryString += addLigature() + ' dnd_spell.description LIKE \'%' + spellText + '%\')';
         }

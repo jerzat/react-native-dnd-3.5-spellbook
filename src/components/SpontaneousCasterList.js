@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { View, AsyncStorage, LayoutAnimation, Alert } from 'react-native';
+import { View, AsyncStorage, LayoutAnimation, Alert, Image, Dimensions } from 'react-native';
 import { SwipeListView } from 'react-native-swipe-list-view';
+import Spinner from 'react-native-loading-spinner-overlay';
 import SpellSlotElement from './SpellSlotElement';
 import SpontaneousSpellListElement from './SpontaneousSpellListElement'
 import QueryHelper from './QueryHelper';
@@ -14,39 +15,64 @@ class SpontaneousCasterList extends Component {
     state = {
         profile: undefined, // Initialize with prop profile, then update right away from async storage
         sections: [], // Store processed sections here for list
-        spells: []
+        spells: [], // Spells manually added by user
+        listSpells: [], // Spells from profile list preferences
+        castingImage: false
     }
 
     componentDidMount() {
-        this.subs = [this.props.navigation.addListener('didFocus', () => this.getSpells()),]; // subscribe to navigation event "didFocus", and trigger a spell reload
-        this.getSpells();
+        this.subs = [this.props.navigation.addListener('didFocus', () => this.updateList()),]; // subscribe to navigation event "didFocus", and trigger a spell reload
+        this.setState({ spinnerVisible: true });
+        this.updateList();
     }
 
     componentWillUnmount() {
         this.subs.forEach(sub => sub.remove());
     }
-    
-    // Query spells from database
-    async getSpells() {
-        let spells = this.state.spells.splice();
-        
-        let profiles = []
-        try {
-            profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
-        } catch (error) {
-            console.log(error);
+
+    async componentWillReceiveProps(nextProps) {
+        // Respond to request to show list spells from navigator header button
+        if (nextProps.screenProps.showListSpells !== this.props.screenProps.showListSpells) {
+            LayoutAnimation.spring();
+            await this.queryListSpells(nextProps.screenProps.showListSpells);
+            await this.updateList();
         }
+    }
+
+    async queryListSpells(doQuery) {
+        this.setState({ spinnerVisible: true });
+        var listSpells = []
+        if (doQuery && this.state.profile !== undefined && (this.state.profile.lists.classes.length > 0 || this.state.profile.lists.domains.length > 0)) {
+            classes = this.state.profile.lists.classes.length > 0 ? this.state.profile.lists.classes : [];
+            domains = this.state.profile.lists.domains.length > 0 ? this.state.profile.lists.domains : [];
+            listSpells = await QueryHelper.searchQuery({db: this.props.db, spellLevel: {selected: []}, classes: {selected: classes}, domains: {selected: domains}, schools: {selected: []}, descriptors: {selected: []}, savingThrow: {selected: []}, spellResistance: {selected: []}, spellName: '', spellText: ''});
+        }
+        this.setState({ listSpells });
+    }
+
+    async updateList() {
+        // Always update profile
+        var oldProfile = this.state.profile;
+        let profiles = []
+        profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
         profile = profiles.find((element) => element.id === this.props.screenProps.id);
-        
-        await Promise.all(
-            profile.available.map(async (spell) => {
-                await QueryHelper.getSpellById(this.props.db, spell.id)
-                    .then((newSpell) => {
-                    spells.push(newSpell);
-                    });
-            })
-        );
-        this.setState({ spells, profile });
+        this.setState({ profile });
+
+        // Query spells from DB if first load or if contents have changed
+        if (oldProfile === undefined || !(profile.available.length === oldProfile.available.length && profile.available.sort().every(function(value, index) { return value === oldProfile.available.sort()[index]}))) {
+            var spells = [];
+            // Query user added spells
+            await Promise.all(
+                profile.available.map(async (spell) => {
+                    await QueryHelper.getSpellById(this.props.db, spell.id)
+                        .then((newSpell) => {
+                            spells.push(newSpell);
+                        });
+                })
+            );
+            this.setState({ spells });
+        }
+
         this.generateSections();
     }
 
@@ -68,7 +94,7 @@ class SpontaneousCasterList extends Component {
         newProfiles.push(this.state.profile);
         newProfiles.sort((a, b) => a.id - b.id);
         await AsyncStorage.setItem('profiles', JSON.stringify(newProfiles));
-        await this.getSpells();
+        await this.updateList();
     }
 
     async deleteSpell(item) {
@@ -95,7 +121,7 @@ class SpontaneousCasterList extends Component {
             LayoutAnimation.spring();
             this.setState({ spells });
             await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
-            this.getSpells();
+            this.updateList();
         }
     }
 
@@ -120,7 +146,14 @@ class SpontaneousCasterList extends Component {
         newProfiles.push(this.state.profile);
         newProfiles.sort((a, b) => a.id - b.id);
         await AsyncStorage.setItem('profiles', JSON.stringify(newProfiles));
-        await this.getSpells();
+
+        // Play animation
+        if (this.state.profile.fancyMode) {
+            this.setState({castingImage: true});
+            setTimeout(() => this.setState({castingImage: false}), 1500);
+        }
+
+        await this.updateList();
     }
 
     async restoreSpells() {
@@ -137,7 +170,7 @@ class SpontaneousCasterList extends Component {
             newProfiles.push(this.state.profile);
             newProfiles.sort((a, b) => a.id - b.id);
             await AsyncStorage.setItem('profiles', JSON.stringify(newProfiles));
-            await this.getSpells();
+            await this.updateList();
             showMessage({
                 message: 'All slots restored!',
                 type: 'success',
@@ -191,34 +224,55 @@ class SpontaneousCasterList extends Component {
                 sections.push({title: 'Level ' + i, slots: {level: i, available: 0, prepared: 0, exhausted: 0}, data:[]})
             }
         }
-        this.state.spells.forEach((stateSpell) => {
-            let lowestClassDomainLevelMatch = 100; // Store lowest match from profile lists prefs here
-            let lowestClassDomainLevelForSpell = 100; // Store fallback lowest for spell here
-            if (stateSpell.class !== undefined && stateSpell.class.length > 0) { // First sort through classes
-                stateSpell.class.forEach((stateSpellClass) => {
-                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellClass.level);
-                    this.state.profile.lists.classes.forEach((profileClass) => {
-                        if (stateSpellClass.id === profileClass.id) {
-                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellClass.level);
-                        }
+
+        // Private function, for each spell, sets a lowestLevel property
+        const setLowestLevel = (spells) => {
+            retSpells = [];
+            spells.forEach((stateSpell) => {
+                let lowestClassDomainLevelMatch = 100; // Store lowest match from profile lists prefs here
+                let lowestClassDomainLevelForSpell = 100; // Store fallback lowest for spell here
+                if (stateSpell.class !== undefined && stateSpell.class.length > 0) { // First sort through classes
+                    stateSpell.class.forEach((stateSpellClass) => {
+                        lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellClass.level);
+                        this.state.profile.lists.classes.forEach((profileClass) => {
+                            if (stateSpellClass.id === profileClass.id) {
+                                lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellClass.level);
+                            }
+                        });
                     });
-                });
-            }
-            if (stateSpell.domain !== undefined && stateSpell.domain.length > 0) { // Then domains
-                stateSpell.domain.forEach((stateSpellDomain) => {
-                    lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellDomain.level);
-                    this.state.profile.lists.domains.forEach((profileDomain) => {
-                        if (stateSpellDomain.id === profileDomain.id) {
-                            lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellDomain.level);
-                        }
+                }
+                if (stateSpell.domain !== undefined && stateSpell.domain.length > 0) { // Then domains
+                    stateSpell.domain.forEach((stateSpellDomain) => {
+                        lowestClassDomainLevelForSpell = Math.min(lowestClassDomainLevelForSpell, stateSpellDomain.level);
+                        this.state.profile.lists.domains.forEach((profileDomain) => {
+                            if (stateSpellDomain.id === profileDomain.id) {
+                                lowestClassDomainLevelMatch = Math.min(lowestClassDomainLevelMatch, stateSpellDomain.level);
+                            }
+                        });
                     });
-                });
-            }
-            let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
-            stateSpell.lowestLevel = level; // Add in lowest level for this profile
-            sections[level].data.push(stateSpell);
-        });
-        this.setState({sections});
+                }
+                let level = lowestClassDomainLevelMatch === 100 ? lowestClassDomainLevelForSpell : lowestClassDomainLevelMatch;
+                stateSpell.lowestLevel = level; // Add in lowest level for this profile
+                retSpells.push(stateSpell);
+            });
+            return retSpells;
+        }
+        
+        userSpells = setLowestLevel(this.state.spells.slice()); // Process user added spells
+        userSpells.forEach((userSpell) => sections[userSpell.lowestLevel].data.push(userSpell)); // Add to sections
+
+        if (this.props.screenProps.showListSpells) { // Only process and add list spells if flag enabled
+            listSpells = setLowestLevel(this.state.listSpells.slice());
+            listSpells.forEach((listSpell) => {
+                duplicate = userSpells.find((element) => element.master_id === listSpell.master_id); // Don't list duplicates of already added spells
+                if (duplicate === undefined) {
+                    listSpell.listSpell = true; // Flag as listSpell
+                    sections[listSpell.lowestLevel].data.push(listSpell);
+                }
+            });
+        }
+        
+        this.setState({ sections, spinnerVisible: false });
     }
 
     renderFooter() {
@@ -239,12 +293,21 @@ class SpontaneousCasterList extends Component {
             <View>
                 <SwipeListView
                     useSectionList
+                    stickySectionHeadersEnabled
                     sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}
                     keyExtractor={(spell) => JSON.stringify(spell.master_id)}
                     ListFooterComponent={this.renderFooter()}
                 />
+                <View style={{ flex: 1 }}>
+                    <Spinner visible={this.state.spinnerVisible} textContent={"Retrieving Spells..."} textStyle={{color: '#FFF'}} overlayColor={'rgba(0,0,0,0.5)'} />
+                </View>
+                {this.state.castingImage ?
+                <View style={{flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
+                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='center' />
+                </View>
+                : null}
             </View>
         );
     }
