@@ -79,7 +79,7 @@ class ProfileAvailableTab extends Component {
         this.setState({ profile });
 
         // Query spells from DB if first load or if contents have changed
-        if (oldProfile === undefined || !(profile.available.length === oldProfile.available.length && profile.available.sort().every(function(value, index) { return value === oldProfile.available.sort()[index]}))) {
+        if (oldProfile === undefined || !(profile.available.length === oldProfile.available.length && profile.available.sort().every(function(value, index) { return value === oldProfile.available.sort()[index]}))) { // Content compare
             var spells = [];
             // Query user added spells
             await Promise.all(
@@ -182,7 +182,7 @@ class ProfileAvailableTab extends Component {
         if (alreadyPrepSpell !== undefined) {
             alreadyPrepSpell.amount += amount;
         } else {
-            newProfile.prepared.push({id: item.master_id, level: level, amount: amount, modifier: modifier});
+            newProfile.prepared.push({id: item.master_id, level: level, originalLevel: item.lowestLevel, amount: amount, modifier: modifier});
         }
         this.setState({profile: newProfile});
         profiles = JSON.parse((await AsyncStorage.getItem('profiles')));
@@ -208,13 +208,6 @@ class ProfileAvailableTab extends Component {
         profiles.splice(profiles.findIndex((element) => element.id === this.props.screenProps.id), 1);
         profiles.push(profile);
         await AsyncStorage.setItem('profiles', JSON.stringify(profiles));
-
-        // Fast feedback, or we have to wait for getSpells
-        /*
-        sections = this.state.sections.slice();
-        sections[item.lowestLevel].data.find((element) => element.master_id === item.master_id).favorite = slotItem.favorite;
-        this.setState({ sections })
-        */
 
         this.updateList();
     }
@@ -278,6 +271,7 @@ class ProfileAvailableTab extends Component {
         }
 
         userSpells = setLowestLevel(this.state.spells.slice());
+        userSpells.sort((a, b) => a.spell_name.localeCompare(b.spell_name));
         userSpells.forEach((userSpell) => {
             userSpell.favorite = this.state.profile.available.find((element) => element.id === userSpell.master_id).favorite;
             sections[userSpell.lowestLevel].data.push(userSpell)
@@ -285,6 +279,7 @@ class ProfileAvailableTab extends Component {
 
         if (this.props.screenProps.showListSpells) { // Only process and add list spells if flag enabled
             listSpells = setLowestLevel(this.state.listSpells.slice());
+            listSpells.sort((a, b) => a.spell_name.localeCompare(b.spell_name));
             listSpells.forEach((listSpell) => {
                 duplicate = userSpells.find((element) => element.master_id === listSpell.master_id); // Don't list duplicates of already added spells
                 if (duplicate === undefined) {
@@ -318,6 +313,7 @@ class ProfileAvailableTab extends Component {
                 <SwipeListView
                     useSectionList
                     stickySectionHeadersEnabled
+                    directionalDistanceChangeThreshold={6}
                     sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}

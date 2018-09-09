@@ -55,6 +55,9 @@ const SpellListElement = (props) => {
                             {props.record.spell_name}
                         </Text>
                     </View>
+                    {props.record.originalLevel !== undefined ?
+                        <Text style={styles.originalLevelStyle}>{'(Original Level: ' + props.record.originalLevel + ')'}</Text>
+                    : null}
                     <View style={styles.rightChunkStyle}>
                         {renderRightChunk()}
                     </View>
@@ -107,6 +110,13 @@ const styles = {
     },
     spellNameStyle: {
         fontWeight: '500'
+    },
+    originalLevelStyle: {
+        fontSize: 8,
+        color: '#777',
+        position: 'absolute',
+        bottom: 3,
+        left: 3
     },
     spellLevelStyle: {
         textAlign: 'right',

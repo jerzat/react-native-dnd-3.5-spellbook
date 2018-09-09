@@ -171,6 +171,9 @@ class ProfilePreparedList extends Component {
 
     renderItem({item, index, section}) {
         profileItem = profile.prepared.find((element) => element.id === item.master_id && element.level === item.preparedLevel && element.modifier === item.modifier);
+        if (profileItem !== undefined) {
+            item.originalLevel = profileItem.originalLevel;
+        }
         return(
             <PreparedSpellListElement
                 record={item}
@@ -227,7 +230,7 @@ class ProfilePreparedList extends Component {
                 />
                 {this.state.castingImage ?
                 <View style={{flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
-                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='center' />
+                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='contain' />
                 </View>
                 : null}
             </View>

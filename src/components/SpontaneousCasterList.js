@@ -259,10 +259,12 @@ class SpontaneousCasterList extends Component {
         }
         
         userSpells = setLowestLevel(this.state.spells.slice()); // Process user added spells
+        userSpells.sort((a, b) => a.spell_name.localeCompare(b.spell_name));
         userSpells.forEach((userSpell) => sections[userSpell.lowestLevel].data.push(userSpell)); // Add to sections
 
         if (this.props.screenProps.showListSpells) { // Only process and add list spells if flag enabled
             listSpells = setLowestLevel(this.state.listSpells.slice());
+            listSpells.sort((a, b) => a.spell_name.localeCompare(b.spell_name));
             listSpells.forEach((listSpell) => {
                 duplicate = userSpells.find((element) => element.master_id === listSpell.master_id); // Don't list duplicates of already added spells
                 if (duplicate === undefined) {
@@ -294,6 +296,7 @@ class SpontaneousCasterList extends Component {
                 <SwipeListView
                     useSectionList
                     stickySectionHeadersEnabled
+                    directionalDistanceChangeThreshold={6}
                     sections={this.state.sections}
                     renderItem={this.renderItem.bind(this)}
                     renderSectionHeader={this.renderSectionHeader.bind(this)}
@@ -305,7 +308,7 @@ class SpontaneousCasterList extends Component {
                 </View>
                 {this.state.castingImage ?
                 <View style={{flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
-                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='center' />
+                    <Image style={{width: Dimensions.get('window').width*0.75, borderRadius: 10}} source={require('../img/spellCast.gif')} resizeMode='contain' />
                 </View>
                 : null}
             </View>
